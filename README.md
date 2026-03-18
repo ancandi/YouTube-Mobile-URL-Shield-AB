@@ -53,7 +53,7 @@ URL Shield offers a different path to achieving uninteruppted mobile youtube bro
 
 Normal shield scripts use `"filter lists"` to identify and remove interruptions. Some just `black-out` the video player and make monetization invisible for 5 seconds or the duration of the monetization. Unfortunately, this is not very reliable. YouTube keeps changing how these elements "look," and the filters must be constantly updated. They are also very easy for YouTube to detect.
 
-URL Shield AB+ takes a different approach. It monitors the video player's behavior directly. If an interruption starts, the script simply resets the `page state.` This method is virtually undetectable and cannot be stopped by standard anti-blocking scripts.
+URL Shield AB+ takes a different approach. It monitors the video player's behavior directly. If an interruption starts, the script simply resets the `page state` automatically. Additionally, it prevents data consumption by removing normally downloaded elements, making this seamless. This method is virtually undetectable and cannot be stopped by standard anti-blocking scripts.
 
 <br>
 
