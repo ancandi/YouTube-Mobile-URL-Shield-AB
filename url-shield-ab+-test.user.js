@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name YouTube Mobile URL Shield - Final Stable
+// @name YouTube Mobile URL Shield - Stable Core
 // @namespace http://tampermonkey.com/
-// @version 4.9.2
-// @description Optimized for Search Results + Direct User Activation
+// @version 5.0.0
+// @description Stable Ad-Busting + Nuclear Reload + Resume Hammer (No Search Bar)
 // @author ancandi
 // @run-at document-start
 // @match https://*.youtube.com/*
@@ -12,16 +12,18 @@
 (function() {
     'use strict';
 
-    let lastTapTime = 0;
+    let forceResumeTimer = null;
     let isNavigating = false;
 
     // --- 1. NAVIGATION STABILIZER ---
+    // Prevents the script from triggering reloads during Back/Forward navigation
     window.addEventListener('popstate', () => {
         isNavigating = true;
         setTimeout(() => { isNavigating = false; }, 1200);
     });
 
-    // --- 2. NUCLEAR RELOAD (Ad Purge) ---
+    // --- 2. NUCLEAR RELOAD ENGINE ---
+    // Forces a hard refresh with a cache-buster when an ad is detected
     const nuclearReload = () => {
         if (isNavigating) return;
         const currentUrl = new URL(window.location.href);
@@ -31,16 +33,27 @@
     };
 
     // --- 3. DATA PREDATOR ---
+    // Strips ad elements and prevents them from loading data
     const predator = new MutationObserver((mutations) => {
         for (let i = 0; i < mutations.length; i++) {
             const nodes = mutations[i].addedNodes;
             for (let j = 0; j < nodes.length; j++) {
                 const node = nodes[j];
                 if (node.nodeType !== 1) continue;
-                const isAd = node.classList?.contains('ad-showing') || node.closest?.('.ad-showing') || node.querySelector?.('.ytd-ad-slot-renderer');
-                if (isAd && !isNavigating) { nuclearReload(); return; }
+
+                const isAd = node.classList?.contains('ad-showing') || 
+                             node.closest?.('.ad-showing') || 
+                             node.querySelector?.('.ytd-ad-slot-renderer') ||
+                             node.closest?.('ytm-promoted-video-renderer');
+
+                if (isAd && !isNavigating) { 
+                    nuclearReload(); 
+                    return; 
+                }
                 
+                // General data stripping during active reload sessions
                 if (sessionStorage.getItem('yt-ad-reload-active') === 'true' && ['VIDEO', 'IMG', 'IMAGE'].includes(node.tagName)) {
+                    // We allow search results to keep images so you can still browse
                     if (!window.location.pathname.startsWith('/results')) {
                         node.src = ''; node.remove(); 
                     }
@@ -50,59 +63,39 @@
     });
     predator.observe(document.documentElement, { childList: true, subtree: true });
 
-    // --- 4. THE UI SHIELD ---
-    const shield = document.createElement('div');
-    Object.assign(shield.style, {
-        position: 'fixed', left: '0', bottom: '0', width: '100vw', height: '100px',
-        zIndex: '2147483647', display: 'none', cursor: 'pointer', touchAction: 'manipulation'
-    });
+    // --- 4. THE RESUME HAMMER ---
+    // Forces the video to play after a user interacts with the page
+    const startForceResume = (videos) => {
+        if (forceResumeTimer) clearInterval(forceResumeTimer);
+        let attempts = 0;
+        forceResumeTimer = setInterval(() => {
+            videos.forEach(v => {
+                if (v.paused && v.readyState >= 1 && !v.closest('.ad-showing')) {
+                    v.play().catch(() => {});
+                }
+            });
+            if (++attempts > 50) clearInterval(forceResumeTimer);
+        }, 10); 
+    };
 
-    const visualBar = document.createElement('div');
-    Object.assign(visualBar.style, {
-        position: 'absolute', inset: '0', backgroundColor: '#0f0f0f', color: '#ffffff',
-        textAlign: 'center', lineHeight: '100px', fontSize: '18px', fontWeight: 'bold',
-        fontFamily: 'sans-serif', borderTop: '1px solid #333'
-    });
-    visualBar.innerText = 'TAP TO UNMUTE SEARCH';
-    shield.appendChild(visualBar);
-    document.body.appendChild(shield);
-
-    // --- 5. DIRECT ACTIVATION (Bypasses Browser Block) ---
-    shield.addEventListener('touchstart', (e) => {
-        e.preventDefault();
+    // Listen for any tap on the document to trigger the Resume Hammer
+    document.addEventListener('touchstart', () => {
         const videos = document.querySelectorAll('video');
-        videos.forEach(v => {
-            v.muted = false;
-            v.volume = 1.0;
-            v.play().catch(() => {});
-        });
-        
-        lastTapTime = Date.now(); // Set cooldown
-        shield.style.display = 'none';
-    }, { capture: true, passive: false });
+        startForceResume(videos);
+    }, { passive: true });
 
-    // --- 6. MAINTENANCE LOOP ---
+    // --- 5. MAINTENANCE LOOP ---
     setInterval(() => {
-        const isSearch = window.location.pathname.startsWith('/results');
-        const videos = document.querySelectorAll('video');
-        const adShowing = !!document.querySelector('.ad-showing');
-
-        if (adShowing && !isNavigating) { nuclearReload(); return; }
-
-        // Logic: Show bar only on search, if muted videos exist, and NOT during the 3s cooldown
-        const cooldownActive = (Date.now() - lastTapTime) < 3000;
+        const adShowing = !!document.querySelector('.ad-showing') || !!document.querySelector('ytm-promoted-video-renderer');
         
-        if (isSearch && videos.length > 0 && !cooldownActive) {
-            let needsUnmute = false;
-            videos.forEach(v => { if (v.muted && v.src) needsUnmute = true; });
-            shield.style.display = needsUnmute ? 'block' : 'none';
-        } else {
-            shield.style.display = 'none';
+        if (adShowing && !isNavigating) { 
+            nuclearReload(); 
         }
 
-        // Session Cleanup
-        if (videos[0] && !videos[0].muted && Date.now() - lastTapTime > 5000) {
+        // Cleanup the reload flag once a video is successfully playing
+        const mainVideo = document.querySelector('video');
+        if (mainVideo && !mainVideo.paused && !adShowing) {
             sessionStorage.removeItem('yt-ad-reload-active');
         }
-    }, 50);
+    }, 100);
 })();
