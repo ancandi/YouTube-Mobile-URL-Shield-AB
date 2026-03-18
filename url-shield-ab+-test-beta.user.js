@@ -2,7 +2,7 @@
 // @name YouTube Mobile URL Shield AB+
 // @namespace http://tampermonkey.com/
 // @version 4.8.2
-// @description v4.8.2 Stable + UI-Relative Z-Index
+// @description v4.8.2 Stable + Absolute Hitbox Priority
 // @author ancandi
 // @run-at document-start
 // @match https://*.youtube.com/*
@@ -26,37 +26,55 @@
                 if (node.nodeType !== 1) continue;
                 const isAd = node.classList?.contains('ad-showing') || node.closest?.('.ad-showing');
                 if (isAd || (sessionStorage.getItem('yt-ad-reload-active') === 'true' && ['VIDEO', 'IMG', 'IMAGE'].includes(node.tagName))) {
-                    node.src = ''; 
-                    node.setAttribute('preload', 'none');
-                    node.remove(); 
+                    node.src = ''; node.setAttribute('preload', 'none'); node.remove(); 
                 }
             }
         }
     });
     predator.observe(document.documentElement, { childList: true, subtree: true });
 
-    // --- 2. THE REINFORCED SHIELD (UI-Relative Priority) ---
+    // --- 2. THE ABSOLUTE HITBOX (Top-Level) ---
     const shield = document.createElement('div');
     shield.id = 'reloader-unmute-shield';
     Object.assign(shield.style, {
-        position: 'fixed', left: '0', width: '100vw', 
-        zIndex: '2001', // Slightly above standard UI (2000)
-        display: 'none', cursor: 'pointer', touchAction: 'manipulation', backgroundColor: 'transparent'
+        position: 'fixed', 
+        left: '0', 
+        width: '100vw', 
+        // Max z-index to stay on top of ALL YouTube UI
+        zIndex: '2147483647', 
+        display: 'none', 
+        cursor: 'pointer', 
+        touchAction: 'manipulation', 
+        backgroundColor: 'transparent',
+        // Force-capture all pointer events
+        pointerEvents: 'auto'
     });
 
+    // --- 3. THE STATIC VISUAL BAR ---
     const visualBar = document.createElement('div');
     Object.assign(visualBar.style, {
-        position: 'absolute', bottom: '0', left: '0', width: '100%', height: '100px',
-        backgroundColor: '#0f0f0f', color: '#ffffff', textAlign: 'center',
-        lineHeight: '100px', fontSize: '18px', fontWeight: 'bold', fontFamily: 'sans-serif', 
-        borderTop: '1px solid #333', boxShadow: '0 -10px 20px rgba(0,0,0,0.5)',
+        position: 'absolute', 
+        bottom: '0', 
+        left: '0', 
+        width: '100%', 
+        height: '100px',
+        backgroundColor: '#0f0f0f', 
+        color: '#ffffff', 
+        textAlign: 'center',
+        lineHeight: '100px', 
+        fontSize: '18px', 
+        fontWeight: 'bold', 
+        fontFamily: 'sans-serif', 
+        borderTop: '1px solid #333', 
+        boxShadow: '0 -10px 20px rgba(0,0,0,0.5)',
+        // Ensure the visual doesn't interfere with the Shield's tap capture
         pointerEvents: 'none',
-        zIndex: '2001'
+        zIndex: '2001' 
     });
     visualBar.innerText = 'TAP TO UNMUTE';
     shield.appendChild(visualBar);
 
-    // --- 3. THE RESUME ENGINE ---
+    // --- 4. THE RESUME ENGINE ---
     const startForceResume = (videos) => {
         if (forceResumeTimer) clearInterval(forceResumeTimer);
         let attempts = 0;
@@ -69,28 +87,32 @@
     };
 
     const handleInteraction = (e) => {
-        if (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
+        if (e) { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            e.stopImmediatePropagation(); 
+        }
         userWantsUnmute = true; 
         return false;
     };
 
+    // Use capture: true to intercept the tap before YouTube's own listeners can react
     ['touchstart', 'click'].forEach(evt => shield.addEventListener(evt, handleInteraction, { capture: true, passive: false }));
 
-    // --- 4. THE MAINTENANCE LOOP (5ms Polling) ---
+    // --- 5. MAINTENANCE LOOP ---
     setInterval(() => {
         const isWatch = window.location.pathname.startsWith('/watch') || window.location.pathname.startsWith('/shorts');
         const videos = document.querySelectorAll('video');
         const adShowing = !!document.querySelector('.ad-showing');
 
-        // Layout Sync
+        // Hitbox Scaling
         if (isWatch) {
-            shield.style.top = '0'; shield.style.height = '100vh';
-            if (adShowing && videos[0]?.duration > 0) {
-                sessionStorage.setItem('yt-ad-reload-active', 'true');
-                window.location.replace(window.location.href);
-            }
+            shield.style.top = '0'; 
+            shield.style.height = '100vh';
         } else {
-            shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
+            shield.style.top = 'auto'; 
+            shield.style.bottom = '0'; 
+            shield.style.height = '100px';
         }
 
         // UNMUTE ENFORCER
@@ -98,24 +120,23 @@
             let success = false;
             videos.forEach(v => {
                 if (v.src && v.readyState >= 1) {
-                    v.muted = false;
+                    v.muted = false; 
                     v.volume = 1.0;
-                    if (!v.muted) {
-                        success = true;
-                        activeSrc = v.src;
+                    if (!v.muted) { 
+                        success = true; 
+                        activeSrc = v.src; 
                     }
                 }
             });
-
             if (success) {
-                userWantsUnmute = false;
+                userWantsUnmute = false; 
                 shield.style.display = 'none';
-                startForceResume(videos);
+                startForceResume(videos); 
                 playStartTime = Date.now();
             }
         }
 
-        // --- UI RECOVERY CHECK ---
+        // UI RECOVERY
         if (videos[0] && !videos[0].paused && !videos[0].muted && !adShowing && playStartTime > 0) {
             if (Date.now() - playStartTime > 1000) {
                 sessionStorage.removeItem('yt-ad-reload-active');
@@ -125,28 +146,21 @@
             }
         }
 
-        // Shield Appearance Condition
+        // Appearance Check
         let needsShield = false;
         videos.forEach(v => {
             if (v.muted && v.src && !adShowing) {
                 if (v.src !== activeSrc) needsShield = true;
-            }
-            if (v.src !== activeSrc && activeSrc !== "" && !v.muted) {
-                activeSrc = v.src;
             }
         });
 
         if (needsShield || userWantsUnmute) {
             if (!shield.parentElement) document.body.appendChild(shield);
             shield.style.display = 'block';
+            // Re-assert z-index in case YouTube tries to layer something on top
+            shield.style.setProperty('z-index', '2147483647', 'important');
         } else {
             shield.style.display = 'none';
-        }
-
-        if (!adShowing && sessionStorage.getItem('yt-ad-reload-active') === 'true') {
-            sessionStorage.removeItem('yt-ad-reload-active');
-            const saver = document.getElementById('yt-hard-blocker');
-            if (saver) saver.remove();
         }
     }, 5);
 })();
