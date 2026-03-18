@@ -17,18 +17,13 @@ URL Shield offers a different path to achieving uninteruppted mobile youtube bro
 
 ## 🛠️ How to use the Beta
 - Install the script via your preferred mobile userscript manager (Kiwi, Firefox, or Safari Userscripts).
-
 - Navigate to any YouTube video.
-
 - Observe the automatic reload if an interruption is detected.
-
 - Tap the "Unmute" zone at the bottom of your screen to restore audio instantly.
 
 ## 📝 Beta Notes
 - Data-Lite: This version is optimized to use the least amount of JavaScript possible, ensuring fast execution on older mobile devices.
-
 - Privacy First: URL Shield AB+ does not require any special permissions and does not track your browsing habits.
-
 - Future Updates: We are currently working on integrating "Shorts" removal, a "Black Background" player mode and prioritizing data usage features for mobile phones for the next major release.
 
 <br>
