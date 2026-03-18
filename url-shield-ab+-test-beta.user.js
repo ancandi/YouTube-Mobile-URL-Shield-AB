@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name YouTube Mobile URL Shield AB+
 // @namespace http://tampermonkey.com/
-// @version 5.3
-// @description Seek-Lock + Watch Auto-Sync + Data Predator
+// @version 4.8.2
+// @description Native UI Style + Stable Burst-Resume + Data Predator
 // @author ancandi
 // @run-at document-start
 // @match https://*.youtube.com/*
@@ -16,9 +16,8 @@
     let activeSrc = ""; 
     let forceResumeTimer = null;
     let playStartTime = 0;
-    let savedTime = 0; // The Seek-Lock variable
 
-    // --- 1. DATA PREDATOR ---
+    // --- 1. DATA PREDATOR (Pre-emptive Blockade) ---
     const predator = new MutationObserver((mutations) => {
         for (let i = 0; i < mutations.length; i++) {
             const nodes = mutations[i].addedNodes;
@@ -34,7 +33,7 @@
     });
     predator.observe(document.documentElement, { childList: true, subtree: true });
 
-    // --- 2. THE REINFORCED SHIELD ---
+    // --- 2. THE NATIVE-STYLE SHIELD ---
     const shield = document.createElement('div');
     shield.id = 'reloader-unmute-shield';
     Object.assign(shield.style, {
@@ -44,33 +43,25 @@
 
     const visualBar = document.createElement('div');
     Object.assign(visualBar.style, {
-        position: 'absolute', bottom: '0', left: '0', width: '100%', height: '100px',
-        backgroundColor: '#ffffff', color: '#000', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', fontSize: '18px',
-        fontWeight: 'bold', fontFamily: 'sans-serif', boxShadow: '0 -10px 20px rgba(0,0,0,0.3)',
-        pointerEvents: 'none' 
+        position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)',
+        width: '92%', height: '56px', backgroundColor: 'rgba(15, 15, 15, 0.95)', 
+        color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+        fontSize: '14px', fontWeight: '500', fontFamily: '"Roboto", "Arial", sans-serif', 
+        borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)', pointerEvents: 'none', letterSpacing: '0.5px'
     });
-    visualBar.innerText = 'TAP TO UNMUTE';
+    visualBar.innerHTML = '<span style="margin-right:8px;">🔇</span> TAP TO UNMUTE VIDEO';
     shield.appendChild(visualBar);
 
-    // --- 3. THE RESUME ENGINE (With Seek-Lock) ---
+    // --- 3. THE RESUME ENGINE (Stable 10ms Burst) ---
     const startForceResume = (videos) => {
         if (forceResumeTimer) clearInterval(forceResumeTimer);
         let attempts = 0;
         forceResumeTimer = setInterval(() => {
             videos.forEach(v => {
-                // SEAMLESS FIX: If YT reset the video to 0, force it back to savedTime
-                if (v.currentTime < savedTime && savedTime > 0.1) {
-                    v.currentTime = savedTime;
-                }
-                if (v.paused && v.readyState >= 1) {
-                    v.play().catch(() => {});
-                }
+                if (v.paused && v.readyState >= 1) v.play().catch(() => {});
             });
-            if (++attempts > 60) {
-                clearInterval(forceResumeTimer);
-                savedTime = 0; // Reset after burst
-            }
+            if (++attempts > 50) clearInterval(forceResumeTimer);
         }, 10); 
     };
 
@@ -82,48 +73,47 @@
 
     ['touchstart', 'click'].forEach(evt => shield.addEventListener(evt, handleInteraction, { capture: true, passive: false }));
 
-    // --- 4. MAINTENANCE LOOP ---
+    // --- 4. THE MAINTENANCE LOOP (5ms Polling) ---
     setInterval(() => {
         const isWatch = window.location.pathname.startsWith('/watch');
         const videos = document.querySelectorAll('video');
         const adShowing = !!document.querySelector('.ad-showing');
 
+        // Dynamic Layout Adjustment
         if (isWatch) {
             shield.style.top = '0'; shield.style.height = '100vh';
-            if (videos.length > 0 && videos[0].muted && !userWantsUnmute && !adShowing) {
-                userWantsUnmute = true; 
-            }
+            visualBar.style.bottom = '20%'; // Positioned over the player area on Watch
             if (adShowing && videos[0]?.duration > 0) {
                 sessionStorage.setItem('yt-ad-reload-active', 'true');
                 window.location.replace(window.location.href);
             }
         } else {
             shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
+            visualBar.style.bottom = '12px'; // Floating above the bottom nav on Home
         }
 
-        // UNMUTE & SEEK-LOCK ENFORCER
+        // UNMUTE ENFORCER
         if (userWantsUnmute) {
             let success = false;
             videos.forEach(v => {
                 if (v.src && v.readyState >= 1) {
-                    // Capture current position before YT can reset it
-                    if (v.currentTime > 0.1) savedTime = v.currentTime;
-                    
                     v.muted = false; v.volume = 1.0;
                     activeSrc = v.src;
                     if (!v.muted) success = true;
                 }
             });
+
             if (success) {
-                userWantsUnmute = false; shield.style.display = 'none';
+                userWantsUnmute = false;
+                shield.style.display = 'none';
                 startForceResume(videos);
                 playStartTime = Date.now();
             }
         }
 
-        // UI RECOVERY & SHIELD VISIBILITY
+        // UI RECOVERY
         if (videos[0] && !videos[0].paused && !videos[0].muted && !adShowing && playStartTime > 0) {
-            if (Date.now() - playStartTime > 800) {
+            if (Date.now() - playStartTime > 1000) {
                 sessionStorage.removeItem('yt-ad-reload-active');
                 const blocker = document.getElementById('yt-hard-blocker');
                 if (blocker) blocker.remove();
@@ -131,10 +121,13 @@
             }
         }
 
+        // SHIELD VISIBILITY
         let needsShield = false;
         videos.forEach(v => {
             if (v.muted && v.src !== activeSrc && !adShowing) needsShield = true;
-            if (v.src !== activeSrc && activeSrc !== "") { activeSrc = ""; userWantsUnmute = false; }
+            if (v.src !== activeSrc && activeSrc !== "") { 
+                activeSrc = ""; userWantsUnmute = false; 
+            }
         });
 
         if (needsShield || userWantsUnmute) {
