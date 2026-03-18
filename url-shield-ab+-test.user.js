@@ -39,16 +39,32 @@
     const shield = document.createElement('div');
     shield.id = 'reloader-unmute-shield';
     Object.assign(shield.style, {
-        position: 'fixed', left: '0', width: '100vw', zIndex: '2147483647', 
-        display: 'none', cursor: 'pointer', touchAction: 'manipulation', backgroundColor: 'transparent'
+        position: 'fixed', 
+        left: '0', 
+        width: '100vw', 
+        zIndex: '2147483647', 
+        display: 'none', 
+        cursor: 'pointer', 
+        touchAction: 'manipulation', 
+        backgroundColor: 'transparent'
     });
 
     const visualBar = document.createElement('div');
     Object.assign(visualBar.style, {
-        position: 'absolute', bottom: '0', left: '0', width: '100%', height: '100px',
-        backgroundColor: '#ffffff', color: '#000', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', fontSize: '18px',
-        fontWeight: 'bold', fontFamily: 'sans-serif', boxShadow: '0 -10px 20px rgba(0,0,0,0.3)',
+        position: 'absolute', 
+        bottom: '0', 
+        left: '0', 
+        width: '100%', 
+        height: '100px',
+        backgroundColor: '#0f0f0f', // YouTube Dark Mode Black
+        color: '#ffffff', 
+        textAlign: 'center',
+        lineHeight: '100px', // Centers text vertically in a static box
+        fontSize: '18px', 
+        fontWeight: 'bold', 
+        fontFamily: 'sans-serif', 
+        borderTop: '1px solid #333',
+        boxShadow: '0 -10px 20px rgba(0,0,0,0.5)',
         pointerEvents: 'none' 
     });
     visualBar.innerText = 'TAP TO UNMUTE';
@@ -82,16 +98,19 @@
 
         // Layout Sync
         if (isWatch) {
-            shield.style.top = '0'; shield.style.height = '100vh';
+            shield.style.top = '0'; 
+            shield.style.height = '100vh';
             if (adShowing && videos[0]?.duration > 0) {
                 sessionStorage.setItem('yt-ad-reload-active', 'true');
                 window.location.replace(window.location.href);
             }
         } else {
-            shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
+            shield.style.top = 'auto'; 
+            shield.style.bottom = '0'; 
+            shield.style.height = '100px';
         }
 
-        // UNMUTE ENFORCER (Runs regardless of shield visibility)
+        // UNMUTE ENFORCER
         if (userWantsUnmute) {
             let success = false;
             videos.forEach(v => {
@@ -107,18 +126,17 @@
                 userWantsUnmute = false;
                 shield.style.display = 'none';
                 startForceResume(videos);
-                playStartTime = Date.now(); // Mark start for UI recovery
+                playStartTime = Date.now();
             }
         }
 
         // --- UI RECOVERY CHECK ---
-        // If playing, unmuted, and 1s has passed without ad detection, force UI reveal
         if (videos[0] && !videos[0].paused && !videos[0].muted && !adShowing && playStartTime > 0) {
             if (Date.now() - playStartTime > 1000) {
                 sessionStorage.removeItem('yt-ad-reload-active');
                 const blocker = document.getElementById('yt-hard-blocker');
                 if (blocker) blocker.remove();
-                playStartTime = 0; // Reset recovery
+                playStartTime = 0;
             }
         }
 
