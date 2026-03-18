@@ -17,40 +17,30 @@
     let forceResumeTimer = null;
     let playStartTime = 0;
 
-    // --- 1. NUCLEAR RELOAD FUNCTION ---
+    // --- 1. THE NUCLEAR RELOAD ENGINE ---
     const nuclearReload = () => {
         const currentUrl = new URL(window.location.href);
-        // Add a cache-buster timestamp so the browser is FORCED to reload from scratch
-        currentUrl.searchParams.set('reload_ts', Date.now());
+        currentUrl.searchParams.set('reload_ts', Date.now()); // Cache-buster
         sessionStorage.setItem('yt-ad-reload-active', 'true');
-        
-        console.log("AD DETECTED: TRIGGERING NUCLEAR RELOAD...");
         window.location.replace(currentUrl.toString());
-        
-        // Fallback if replace() is blocked by SPA logic
         setTimeout(() => { window.location.href = currentUrl.toString(); }, 50);
     };
 
-    // --- 2. DATA PREDATOR ---
+    // --- 2. DATA PREDATOR (Ad & Thumbnail Stripping) ---
     const predator = new MutationObserver((mutations) => {
         for (let i = 0; i < mutations.length; i++) {
             const nodes = mutations[i].addedNodes;
             for (let j = 0; j < nodes.length; j++) {
                 const node = nodes[j];
                 if (node.nodeType !== 1) continue;
-                
-                // Detection for standard ads + Search "Sponsored" elements
+
                 const isAd = node.classList?.contains('ad-showing') || 
                              node.closest?.('.ad-showing') || 
                              node.querySelector?.('.ytd-ad-slot-renderer') ||
                              node.closest?.('ytm-promoted-video-renderer');
 
-                if (isAd) {
-                    nuclearReload(); // Trigger reload immediately on detection
-                    return; 
-                }
+                if (isAd) { nuclearReload(); return; }
 
-                // Thumbnail/Data Stripping
                 if (sessionStorage.getItem('yt-ad-reload-active') === 'true' && ['VIDEO', 'IMG', 'IMAGE'].includes(node.tagName)) {
                     node.src = ''; node.remove(); 
                 }
@@ -59,7 +49,7 @@
     });
     predator.observe(document.documentElement, { childList: true, subtree: true });
 
-    // --- 3. THE ABSOLUTE HITBOX ---
+    // --- 3. THE REINFORCED UI (Hitbox + Visual Bar) ---
     const shield = document.createElement('div');
     shield.id = 'reloader-unmute-shield';
     Object.assign(shield.style, {
@@ -78,7 +68,21 @@
     visualBar.innerText = 'TAP TO UNMUTE';
     shield.appendChild(visualBar);
 
-    // --- 4. INTERACTION ---
+    // --- 4. THE RESUME HAMMER (RE-ADDED) ---
+    const startForceResume = (videos) => {
+        if (forceResumeTimer) clearInterval(forceResumeTimer);
+        let attempts = 0;
+        forceResumeTimer = setInterval(() => {
+            videos.forEach(v => {
+                if (v.paused && v.readyState >= 1) {
+                    v.play().catch(() => {});
+                }
+            });
+            // Stop hammering after 50 attempts (approx 500ms) to save CPU
+            if (++attempts > 50) clearInterval(forceResumeTimer);
+        }, 10); 
+    };
+
     const handleInteraction = (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
         userWantsUnmute = true; 
@@ -86,23 +90,24 @@
     };
     ['touchstart', 'click'].forEach(evt => shield.addEventListener(evt, handleInteraction, { capture: true, passive: false }));
 
-    // --- 5. MAINTENANCE LOOP ---
+    // --- 5. MAINTENANCE LOOP (The Logic Sandwich) ---
     setInterval(() => {
         const path = window.location.pathname;
         const isInteractive = path.startsWith('/watch') || path.startsWith('/shorts') || path.startsWith('/results');
         const videos = document.querySelectorAll('video');
         const adShowing = !!document.querySelector('.ad-showing') || !!document.querySelector('ytm-promoted-video-renderer');
 
+        // Nuclear Fail-safe
         if (adShowing) { nuclearReload(); return; }
 
-        // Layout Scaling
+        // Layout Sync
         if (isInteractive && !path.startsWith('/results')) {
             shield.style.top = '0'; shield.style.height = '100vh';
         } else {
             shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
         }
 
-        // Unmute Enforcer
+        // Unmute + Resume Enforcer
         if (userWantsUnmute) {
             let success = false;
             videos.forEach(v => {
@@ -113,11 +118,12 @@
             });
             if (success) {
                 userWantsUnmute = false; shield.style.display = 'none';
+                startForceResume(videos); // Trigger the Resume Hammer
                 playStartTime = Date.now();
             }
         }
 
-        // Cleanup
+        // State Cleanup
         if (videos[0] && !videos[0].paused && !videos[0].muted && !adShowing && playStartTime > 0) {
             if (Date.now() - playStartTime > 1500) {
                 sessionStorage.removeItem('yt-ad-reload-active');
@@ -125,13 +131,14 @@
             }
         }
 
-        // Appearance
+        // Visual Visibility Logic
         let needsShield = false;
         videos.forEach(v => { if (v.muted && v.src && !adShowing && v.src !== activeSrc) needsShield = true; });
 
         if (needsShield || userWantsUnmute) {
             if (!shield.parentElement) document.body.appendChild(shield);
             shield.style.display = 'block';
+            shield.style.setProperty('z-index', '2147483647', 'important');
         } else {
             shield.style.display = 'none';
         }
