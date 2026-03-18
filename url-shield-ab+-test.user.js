@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name YouTube Mobile URL Shield AB+
 // @namespace http://tampermonkey.com/
-// @version 4.3
-// @description Seamless Fullscreen Unmute + Home Persistence
+// @version 4.4
+// @description Persistent Resume Fix + Multi-Video Unmute
 // @author ancandi
 // @run-at document-start
 // @match https://*.youtube.com/*
@@ -16,7 +16,7 @@
     const checkHistoryHole = () => {
         if (sessionStorage.getItem('yt-ad-reload-active') === 'true' && window.location.pathname.startsWith('/watch')) {
             const url = new URL(window.location.href);
-            url.searchParams.set('nc', Date.now()); // Data Optimization: Prevent cached ad-bloat
+            url.searchParams.set('nc', Date.now()); 
             window.location.replace(url.toString());
         }
     };
@@ -72,7 +72,6 @@
     let activeSrc = ""; 
 
     const handleInteraction = (e) => {
-        // SEAMLESS FIX: Stop the event from reaching YouTube's Pause/Play logic
         if (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -85,23 +84,34 @@
             v.muted = false;
             v.volume = 1.0;
             
-            // Execute play immediately
-            const p = v.play();
-            if (p !== undefined) {
-                p.catch(() => { v.play(); });
-            }
+            // --- RESUME CHECK LOGIC ---
+            const forcePlay = () => {
+                if (v.paused) {
+                    v.play().catch(() => {
+                        // If browser blocks, try again on next frame
+                        requestAnimationFrame(() => v.play().catch(()=>{}));
+                    });
+                }
+            };
 
-            // SEAMLESS FIX: If YT tries to pause right after our tap, force it back on
-            setTimeout(() => {
-                if (v.paused) v.play().catch(() => {});
-            }, 10); 
+            forcePlay();
+
+            // Check repeatedly for 200ms to ensure the "first video" doesn't stay paused
+            let checks = 0;
+            const checkInterval = setInterval(() => {
+                if (!v.paused || checks > 10) {
+                    clearInterval(checkInterval);
+                } else {
+                    forcePlay();
+                    checks++;
+                }
+            }, 20); 
         });
         
         shield.style.display = 'none';
         return false;
     };
 
-    // Use Capture: True to intercept the tap BEFORE YouTube's listeners fire
     ['touchstart', 'click'].forEach(evt => {
         shield.addEventListener(evt, handleInteraction, { capture: true, passive: false });
     });
@@ -126,7 +136,6 @@
         const videos = document.querySelectorAll('video');
         let mutedFound = false;
 
-        // Split Logic: Fullscreen on Watch, Bottom-only on Home
         if (isWatch) {
             shield.style.top = '0'; 
             shield.style.height = '100vh';
@@ -143,7 +152,7 @@
                 mutedFound = true;
             }
             if (v.src !== activeSrc && activeSrc !== "") {
-                activeSrc = ""; // Reset persistence for new videos/Shorts
+                activeSrc = ""; 
             }
         });
 
