@@ -39,11 +39,11 @@ URL Shield offers a different path to achieving uninteruppted mobile youtube bro
 
 <br>
 
-> **⚠️ One known issue:** Navigating to the **`previous page`** after a reload may display a **`broken YouTube client.`** Previous YouTube homepages where the **`current video`** playing was routed, are **`pushed 1 page back`** from navigation. 
+> **⚠️ One known issue:** Navigating to the **`previous page`** after a reload may display a **`broken YouTube client.`** Previous YouTube homepages where the **`current video`** playing was routed, are **`pushed 3 pages back`** from navigation. 
  
 > Expected: Navigation Back $\rightarrow$ Previous Page (e.g., YouTube Homepage).
 
-> Actual: Navigation Back $\rightarrow$ Broken/Frozen YouTube Client $\rightarrow$ (Second Back Click) $\rightarrow$ Previous Page.
+> Actual: Navigation Back $\rightarrow$ Broken/Frozen YouTube Client $\rightarrow$ (2 More Back Clicks) $\rightarrow$ Previous Page.
 
 >Reloading a video page duplicates the history entry, breaking "Back" navigation and requiring a double-tap to return to the homepage.
 
