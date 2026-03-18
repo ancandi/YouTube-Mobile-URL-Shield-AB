@@ -2,7 +2,7 @@
 // @name YouTube Mobile URL Shield AB+
 // @namespace http://tampermonkey.com/
 // @version 4.8.2
-// @description Native UI Style + Stable Burst-Resume + Data Predator
+// @description UI Recovery + Independent Unmute Enforcer (Mobile Optimized)
 // @author ancandi
 // @run-at document-start
 // @match https://*.youtube.com/*
@@ -17,7 +17,7 @@
     let forceResumeTimer = null;
     let playStartTime = 0;
 
-    // --- 1. DATA PREDATOR (Pre-emptive Blockade) ---
+    // --- 1. DATA PREDATOR ---
     const predator = new MutationObserver((mutations) => {
         for (let i = 0; i < mutations.length; i++) {
             const nodes = mutations[i].addedNodes;
@@ -26,14 +26,16 @@
                 if (node.nodeType !== 1) continue;
                 const isAd = node.classList?.contains('ad-showing') || node.closest?.('.ad-showing');
                 if (isAd || (sessionStorage.getItem('yt-ad-reload-active') === 'true' && ['VIDEO', 'IMG', 'IMAGE'].includes(node.tagName))) {
-                    node.src = ''; node.setAttribute('preload', 'none'); node.remove(); 
+                    node.src = ''; 
+                    node.setAttribute('preload', 'none');
+                    node.remove(); 
                 }
             }
         }
     });
     predator.observe(document.documentElement, { childList: true, subtree: true });
 
-    // --- 2. THE NATIVE-STYLE SHIELD ---
+    // --- 2. THE REINFORCED SHIELD ---
     const shield = document.createElement('div');
     shield.id = 'reloader-unmute-shield';
     Object.assign(shield.style, {
@@ -43,17 +45,18 @@
 
     const visualBar = document.createElement('div');
     Object.assign(visualBar.style, {
-        position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)',
-        width: '92%', height: '56px', backgroundColor: 'rgba(15, 15, 15, 0.95)', 
-        color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-        fontSize: '14px', fontWeight: '500', fontFamily: '"Roboto", "Arial", sans-serif', 
-        borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.5)', pointerEvents: 'none', letterSpacing: '0.5px'
+        position: 'absolute', bottom: '0', left: '0', width: '100%', height: '100px',
+        backgroundColor: '#0f0f0f', color: '#ffffff', display: 'flex',
+        flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+        fontSize: '16px', fontWeight: '600', fontFamily: 'sans-serif', 
+        borderTop: '1px solid #333', boxShadow: '0 -10px 30px rgba(0,0,0,0.5)',
+        pointerEvents: 'none' 
     });
-    visualBar.innerHTML = '<span style="margin-right:8px;">🔇</span> TAP TO UNMUTE VIDEO';
+    // Native-looking text with a small mute icon
+    visualBar.innerHTML = '<div style="font-size:24px; margin-bottom:4px;">🔇</div><div>TAP TO UNMUTE</div>';
     shield.appendChild(visualBar);
 
-    // --- 3. THE RESUME ENGINE (Stable 10ms Burst) ---
+    // --- 3. THE RESUME ENGINE ---
     const startForceResume = (videos) => {
         if (forceResumeTimer) clearInterval(forceResumeTimer);
         let attempts = 0;
@@ -79,17 +82,15 @@
         const videos = document.querySelectorAll('video');
         const adShowing = !!document.querySelector('.ad-showing');
 
-        // Dynamic Layout Adjustment
+        // Layout Sync
         if (isWatch) {
             shield.style.top = '0'; shield.style.height = '100vh';
-            visualBar.style.bottom = '20%'; // Positioned over the player area on Watch
             if (adShowing && videos[0]?.duration > 0) {
                 sessionStorage.setItem('yt-ad-reload-active', 'true');
                 window.location.replace(window.location.href);
             }
         } else {
             shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
-            visualBar.style.bottom = '12px'; // Floating above the bottom nav on Home
         }
 
         // UNMUTE ENFORCER
@@ -97,7 +98,8 @@
             let success = false;
             videos.forEach(v => {
                 if (v.src && v.readyState >= 1) {
-                    v.muted = false; v.volume = 1.0;
+                    v.muted = false;
+                    v.volume = 1.0;
                     activeSrc = v.src;
                     if (!v.muted) success = true;
                 }
@@ -111,7 +113,7 @@
             }
         }
 
-        // UI RECOVERY
+        // --- UI RECOVERY CHECK ---
         if (videos[0] && !videos[0].paused && !videos[0].muted && !adShowing && playStartTime > 0) {
             if (Date.now() - playStartTime > 1000) {
                 sessionStorage.removeItem('yt-ad-reload-active');
@@ -121,12 +123,12 @@
             }
         }
 
-        // SHIELD VISIBILITY
+        // Shield Appearance Condition
         let needsShield = false;
         videos.forEach(v => {
             if (v.muted && v.src !== activeSrc && !adShowing) needsShield = true;
-            if (v.src !== activeSrc && activeSrc !== "") { 
-                activeSrc = ""; userWantsUnmute = false; 
+            if (v.src !== activeSrc && activeSrc !== "") {
+                activeSrc = ""; userWantsUnmute = false;
             }
         });
 
@@ -137,6 +139,7 @@
             shield.style.display = 'none';
         }
 
+        // Standard Cleanup
         if (!adShowing && sessionStorage.getItem('yt-ad-reload-active') === 'true') {
             sessionStorage.removeItem('yt-ad-reload-active');
             const saver = document.getElementById('yt-hard-blocker');
