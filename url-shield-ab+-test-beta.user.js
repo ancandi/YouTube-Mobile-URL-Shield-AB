@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name YouTube Mobile URL Shield AB+
 // @namespace http://tampermonkey.com/
-// @version 5.0
-// @description Native Event Bridge + UI Recovery + Data Predator
+// @version 5.1
+// @description Auto-Unmute on /watch + Persistence + Data Predator
 // @author ancandi
 // @run-at document-start
 // @match https://*.youtube.com/*
@@ -17,7 +17,7 @@
     let forceResumeTimer = null;
     let playStartTime = 0;
 
-    // --- 1. DATA PREDATOR (Benchmark: ~85-90% Savings) ---
+    // --- 1. DATA PREDATOR (Pre-emptive Blockade) ---
     const predator = new MutationObserver((mutations) => {
         for (let i = 0; i < mutations.length; i++) {
             const nodes = mutations[i].addedNodes;
@@ -52,18 +52,7 @@
     visualBar.innerText = 'TAP TO UNMUTE';
     shield.appendChild(visualBar);
 
-    // --- 3. SEAMLESS BRIDGE (Simulates Native Tap) ---
-    const simulateNativeUnmute = () => {
-        // Target common YouTube unmute button classes
-        const nativeBtn = document.querySelector('.ytp-unmute, .ytp-mute-button, .ytm-player-unmute-button');
-        if (nativeBtn) {
-            const opts = { bubbles: true, cancelable: true, view: window };
-            nativeBtn.dispatchEvent(new MouseEvent('click', opts));
-            nativeBtn.dispatchEvent(new TouchEvent('touchstart', opts));
-            nativeBtn.dispatchEvent(new TouchEvent('touchend', opts));
-        }
-    };
-
+    // --- 3. THE RESUME ENGINE (Burst Hammer) ---
     const startForceResume = (videos) => {
         if (forceResumeTimer) clearInterval(forceResumeTimer);
         let attempts = 0;
@@ -78,13 +67,12 @@
     const handleInteraction = (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
         userWantsUnmute = true; 
-        if (window.location.pathname.startsWith('/watch')) simulateNativeUnmute();
         return false;
     };
 
     ['touchstart', 'click'].forEach(evt => shield.addEventListener(evt, handleInteraction, { capture: true, passive: false }));
 
-    // --- 4. MAINTENANCE LOOP ---
+    // --- 4. MAINTENANCE & AUTO-STRIKE LOOP ---
     setInterval(() => {
         const isWatch = window.location.pathname.startsWith('/watch');
         const videos = document.querySelectorAll('video');
@@ -92,6 +80,13 @@
 
         if (isWatch) {
             shield.style.top = '0'; shield.style.height = '100vh';
+            
+            // AUTO-STRIKE FEATURE: On /watch, we auto-trigger the unmute intent
+            // This simulates the "tap" by itself the moment a video is detected
+            if (videos.length > 0 && videos[0].muted && !userWantsUnmute && !adShowing) {
+                userWantsUnmute = true; 
+            }
+
             if (adShowing && videos[0]?.duration > 0) {
                 sessionStorage.setItem('yt-ad-reload-active', 'true');
                 window.location.replace(window.location.href);
@@ -100,13 +95,19 @@
             shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
         }
 
+        // UNMUTE ENFORCER
         if (userWantsUnmute) {
             let success = false;
             videos.forEach(v => {
                 if (v.src && v.readyState >= 1) {
                     v.muted = false; v.volume = 1.0;
                     activeSrc = v.src;
-                    if (!v.muted) success = true;
+                    if (!v.muted) {
+                        success = true;
+                        // Trigger the native UI update so volume bars etc. appear correctly
+                        const btn = document.querySelector('.ytp-unmute, .ytp-mute-button');
+                        if (btn) btn.click(); 
+                    }
                 }
             });
             if (success) {
@@ -116,9 +117,9 @@
             }
         }
 
-        // UI Recovery Logic
+        // UI RECOVERY
         if (videos[0] && !videos[0].paused && !videos[0].muted && !adShowing && playStartTime > 0) {
-            if (Date.now() - playStartTime > 800) { // Slightly faster recovery
+            if (Date.now() - playStartTime > 800) {
                 sessionStorage.removeItem('yt-ad-reload-active');
                 const blocker = document.getElementById('yt-hard-blocker');
                 if (blocker) blocker.remove();
@@ -126,6 +127,7 @@
             }
         }
 
+        // VISIBILITY (Only shows if Auto-Strike fails due to browser restrictions)
         let needsShield = false;
         videos.forEach(v => {
             if (v.muted && v.src !== activeSrc && !adShowing) needsShield = true;
