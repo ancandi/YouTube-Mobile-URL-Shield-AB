@@ -2,7 +2,7 @@
 // @name YouTube Mobile URL Shield AB+
 // @namespace http://tampermonkey.com/
 // @version 4.8.5
-// @description v4.8.2 Resume Hammer + v4.8.4 Nuclear Reload (Full Logic)
+// @description v4.8.5 + Search Result Image Recovery
 // @author ancandi
 // @run-at document-start
 // @match https://*.youtube.com/*
@@ -16,17 +16,23 @@
     let activeSrc = ""; 
     let forceResumeTimer = null;
     let playStartTime = 0;
+    let isNavigating = false;
+    let amnestyGranted = false; 
 
-    // --- 1. THE NUCLEAR RELOAD ENGINE ---
+    window.addEventListener('popstate', () => {
+        isNavigating = true;
+        setTimeout(() => { isNavigating = false; }, 1200);
+    });
+
     const nuclearReload = () => {
+        if (isNavigating) return;
         const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('reload_ts', Date.now()); // Cache-buster
-        sessionStorage.setItem('yt-ad-reload-active', 'true');
+        currentUrl.searchParams.set('reload_ts', Date.now());
+        try { sessionStorage.setItem('yt-ad-reload-active', 'true'); } catch(e) {}
         window.location.replace(currentUrl.toString());
-        setTimeout(() => { window.location.href = currentUrl.toString(); }, 50);
     };
 
-    // --- 2. DATA PREDATOR (Ad & Thumbnail Stripping) ---
+    // --- 1. DATA PREDATOR (Refined for Search) ---
     const predator = new MutationObserver((mutations) => {
         for (let i = 0; i < mutations.length; i++) {
             const nodes = mutations[i].addedNodes;
@@ -34,27 +40,45 @@
                 const node = nodes[j];
                 if (node.nodeType !== 1) continue;
 
-                const isAd = node.classList?.contains('ad-showing') || 
-                             node.closest?.('.ad-showing') || 
-                             node.querySelector?.('.ytd-ad-slot-renderer') ||
-                             node.closest?.('ytm-promoted-video-renderer');
+                const isExplicitAd = node.classList?.contains('ad-showing') || 
+                                     node.closest?.('.ad-showing') || 
+                                     node.querySelector?.('.ytd-ad-slot-renderer') ||
+                                     node.closest?.('ytm-promoted-video-renderer');
 
-                if (isAd) { nuclearReload(); return; }
+                if (isExplicitAd && !isNavigating) { nuclearReload(); return; }
 
-                if (sessionStorage.getItem('yt-ad-reload-active') === 'true' && ['VIDEO', 'IMG', 'IMAGE'].includes(node.tagName)) {
-                    node.src = ''; node.remove(); 
+                // LOGIC: Handle Reload Recovery
+                if (sessionStorage.getItem('yt-ad-reload-active') === 'true') {
+                    const isSearchResult = window.location.pathname.startsWith('/results');
+                    
+                    // If we are on search, let thumbnails live; if on watch, only let the main video live
+                    if (node.tagName === 'VIDEO' && !isExplicitAd && !amnestyGranted) {
+                        amnestyGranted = true; 
+                        continue; 
+                    }
+                    
+                    // Allow images ONLY if we are on the search page and they aren't ads
+                    if (isSearchResult && ['IMG', 'IMAGE'].includes(node.tagName) && !isExplicitAd) {
+                        continue; 
+                    }
+
+                    // Kill everything else (Ads, tracking pixels, watch-page clutter)
+                    if (['IMG', 'IMAGE'].includes(node.tagName) || (node.tagName === 'VIDEO' && isExplicitAd)) {
+                        node.src = ''; node.remove(); 
+                    }
                 }
             }
         }
     });
     predator.observe(document.documentElement, { childList: true, subtree: true });
 
-    // --- 3. THE REINFORCED UI (Hitbox + Visual Bar) ---
+    // --- 2. UI STACK (Shield & Visual Bar) ---
     const shield = document.createElement('div');
     shield.id = 'reloader-unmute-shield';
     Object.assign(shield.style, {
         position: 'fixed', left: '0', width: '100vw', zIndex: '2147483647', 
-        display: 'none', cursor: 'pointer', touchAction: 'manipulation', backgroundColor: 'transparent'
+        display: 'none', cursor: 'pointer', touchAction: 'manipulation', backgroundColor: 'transparent',
+        pointerEvents: 'auto'
     });
 
     const visualBar = document.createElement('div');
@@ -62,23 +86,19 @@
         position: 'absolute', bottom: '0', left: '0', width: '100%', height: '100px',
         backgroundColor: '#0f0f0f', color: '#ffffff', textAlign: 'center',
         lineHeight: '100px', fontSize: '18px', fontWeight: 'bold', fontFamily: 'sans-serif', 
-        borderTop: '1px solid #333', boxShadow: '0 -10px 20px rgba(0,0,0,0.5)',
-        pointerEvents: 'none', zIndex: '2001' 
+        borderTop: '1px solid #333', zIndex: '2001', pointerEvents: 'none'
     });
     visualBar.innerText = 'TAP TO UNMUTE';
     shield.appendChild(visualBar);
 
-    // --- 4. THE RESUME HAMMER (RE-ADDED) ---
+    // --- 3. THE RESUME HAMMER ---
     const startForceResume = (videos) => {
         if (forceResumeTimer) clearInterval(forceResumeTimer);
         let attempts = 0;
         forceResumeTimer = setInterval(() => {
             videos.forEach(v => {
-                if (v.paused && v.readyState >= 1) {
-                    v.play().catch(() => {});
-                }
+                if (v.paused && v.readyState >= 1) v.play().catch(() => {});
             });
-            // Stop hammering after 50 attempts (approx 500ms) to save CPU
             if (++attempts > 50) clearInterval(forceResumeTimer);
         }, 10); 
     };
@@ -90,24 +110,23 @@
     };
     ['touchstart', 'click'].forEach(evt => shield.addEventListener(evt, handleInteraction, { capture: true, passive: false }));
 
-    // --- 5. MAINTENANCE LOOP (The Logic Sandwich) ---
+    // --- 4. MAINTENANCE LOOP ---
     setInterval(() => {
         const path = window.location.pathname;
-        const isInteractive = path.startsWith('/watch') || path.startsWith('/shorts') || path.startsWith('/results');
+        const isSearch = path.startsWith('/results');
+        const isInteractive = path.startsWith('/watch') || path.startsWith('/shorts') || isSearch;
         const videos = document.querySelectorAll('video');
         const adShowing = !!document.querySelector('.ad-showing') || !!document.querySelector('ytm-promoted-video-renderer');
 
-        // Nuclear Fail-safe
-        if (adShowing) { nuclearReload(); return; }
+        if (adShowing && !isNavigating) { nuclearReload(); return; }
 
-        // Layout Sync
-        if (isInteractive && !path.startsWith('/results')) {
+        // Layout: Search page keeps the bar at the bottom to avoid blocking results
+        if (isInteractive && !isSearch) {
             shield.style.top = '0'; shield.style.height = '100vh';
         } else {
             shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
         }
 
-        // Unmute + Resume Enforcer
         if (userWantsUnmute) {
             let success = false;
             videos.forEach(v => {
@@ -118,27 +137,26 @@
             });
             if (success) {
                 userWantsUnmute = false; shield.style.display = 'none';
-                startForceResume(videos); // Trigger the Resume Hammer
+                startForceResume(videos);
                 playStartTime = Date.now();
             }
         }
 
-        // State Cleanup
-        if (videos[0] && !videos[0].paused && !videos[0].muted && !adShowing && playStartTime > 0) {
-            if (Date.now() - playStartTime > 1500) {
+        // Cleanup: Reset "Active Reload" state once we are stable
+        if ( (videos[0] && !videos[0].paused && !videos[0].muted && !adShowing && playStartTime > 0) || (isSearch && Date.now() - playStartTime > 3000) ) {
+            if (Date.now() - playStartTime > 2000) {
                 sessionStorage.removeItem('yt-ad-reload-active');
+                amnestyGranted = false; 
                 playStartTime = 0;
             }
         }
 
-        // Visual Visibility Logic
         let needsShield = false;
         videos.forEach(v => { if (v.muted && v.src && !adShowing && v.src !== activeSrc) needsShield = true; });
 
         if (needsShield || userWantsUnmute) {
             if (!shield.parentElement) document.body.appendChild(shield);
             shield.style.display = 'block';
-            shield.style.setProperty('z-index', '2147483647', 'important');
         } else {
             shield.style.display = 'none';
         }
