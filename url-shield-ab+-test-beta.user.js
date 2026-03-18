@@ -2,7 +2,7 @@
 // @name YouTube Mobile URL Shield AB+
 // @namespace http://tampermonkey.com/
 // @version 4.8.2
-// @description UI Recovery + Independent Unmute Enforcer (Mobile Optimized)
+// @description Static UI + Stable v4.8.2 Hammer Logic
 // @author ancandi
 // @run-at document-start
 // @match https://*.youtube.com/*
@@ -39,21 +39,35 @@
     const shield = document.createElement('div');
     shield.id = 'reloader-unmute-shield';
     Object.assign(shield.style, {
-        position: 'fixed', left: '0', width: '100vw', zIndex: '2147483647', 
-        display: 'none', cursor: 'pointer', touchAction: 'manipulation', backgroundColor: 'transparent'
+        position: 'fixed', 
+        left: '0', 
+        width: '100vw', 
+        zIndex: '2147483647', 
+        display: 'none', 
+        cursor: 'pointer', 
+        touchAction: 'manipulation', 
+        backgroundColor: 'transparent'
     });
 
     const visualBar = document.createElement('div');
     Object.assign(visualBar.style, {
-        position: 'absolute', bottom: '0', left: '0', width: '100%', height: '100px',
-        backgroundColor: '#0f0f0f', color: '#ffffff', display: 'flex',
-        flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
-        fontSize: '16px', fontWeight: '600', fontFamily: 'sans-serif', 
-        borderTop: '1px solid #333', boxShadow: '0 -10px 30px rgba(0,0,0,0.5)',
+        position: 'absolute', 
+        bottom: '0', 
+        left: '0', 
+        width: '100%', 
+        height: '100px',
+        backgroundColor: '#0f0f0f', // YouTube Dark Mode Black
+        color: '#ffffff', 
+        textAlign: 'center',
+        lineHeight: '100px', // Centers text vertically in a static box
+        fontSize: '18px', 
+        fontWeight: 'bold', 
+        fontFamily: 'sans-serif', 
+        borderTop: '1px solid #333',
+        boxShadow: '0 -10px 20px rgba(0,0,0,0.5)',
         pointerEvents: 'none' 
     });
-    // Native-looking text with a small mute icon
-    visualBar.innerHTML = '<div style="font-size:24px; margin-bottom:4px;">🔇</div><div>TAP TO UNMUTE</div>';
+    visualBar.innerText = 'TAP TO UNMUTE';
     shield.appendChild(visualBar);
 
     // --- 3. THE RESUME ENGINE ---
@@ -84,13 +98,16 @@
 
         // Layout Sync
         if (isWatch) {
-            shield.style.top = '0'; shield.style.height = '100vh';
+            shield.style.top = '0'; 
+            shield.style.height = '100vh';
             if (adShowing && videos[0]?.duration > 0) {
                 sessionStorage.setItem('yt-ad-reload-active', 'true');
                 window.location.replace(window.location.href);
             }
         } else {
-            shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
+            shield.style.top = 'auto'; 
+            shield.style.bottom = '0'; 
+            shield.style.height = '100px';
         }
 
         // UNMUTE ENFORCER
