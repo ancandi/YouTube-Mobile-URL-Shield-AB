@@ -2,7 +2,7 @@
 // @name YouTube Mobile URL Shield AB+
 // @namespace http://tampermonkey.com/
 // @version 4.8.2
-// @description UI Recovery + Independent Unmute Enforcer
+// @description v4.8.2 Stable + UI-Relative Z-Index
 // @author ancandi
 // @run-at document-start
 // @match https://*.youtube.com/*
@@ -35,37 +35,23 @@
     });
     predator.observe(document.documentElement, { childList: true, subtree: true });
 
-    // --- 2. THE REINFORCED SHIELD ---
+    // --- 2. THE REINFORCED SHIELD (UI-Relative Priority) ---
     const shield = document.createElement('div');
     shield.id = 'reloader-unmute-shield';
     Object.assign(shield.style, {
-        position: 'fixed', 
-        left: '0', 
-        width: '100vw', 
-        zIndex: '2147483647', 
-        display: 'none', 
-        cursor: 'pointer', 
-        touchAction: 'manipulation', 
-        backgroundColor: 'transparent'
+        position: 'fixed', left: '0', width: '100vw', 
+        zIndex: '2001', // Slightly above standard UI (2000)
+        display: 'none', cursor: 'pointer', touchAction: 'manipulation', backgroundColor: 'transparent'
     });
 
     const visualBar = document.createElement('div');
     Object.assign(visualBar.style, {
-        position: 'absolute', 
-        bottom: '0', 
-        left: '0', 
-        width: '100%', 
-        height: '100px',
-        backgroundColor: '#0f0f0f', // YouTube Dark Mode Black
-        color: '#ffffff', 
-        textAlign: 'center',
-        lineHeight: '100px', // Centers text vertically in a static box
-        fontSize: '18px', 
-        fontWeight: 'bold', 
-        fontFamily: 'sans-serif', 
-        borderTop: '1px solid #333',
-        boxShadow: '0 -10px 20px rgba(0,0,0,0.5)',
-        pointerEvents: 'none' 
+        position: 'absolute', bottom: '0', left: '0', width: '100%', height: '100px',
+        backgroundColor: '#0f0f0f', color: '#ffffff', textAlign: 'center',
+        lineHeight: '100px', fontSize: '18px', fontWeight: 'bold', fontFamily: 'sans-serif', 
+        borderTop: '1px solid #333', boxShadow: '0 -10px 20px rgba(0,0,0,0.5)',
+        pointerEvents: 'none',
+        zIndex: '2001'
     });
     visualBar.innerText = 'TAP TO UNMUTE';
     shield.appendChild(visualBar);
@@ -92,22 +78,19 @@
 
     // --- 4. THE MAINTENANCE LOOP (5ms Polling) ---
     setInterval(() => {
-        const isWatch = window.location.pathname.startsWith('/watch');
+        const isWatch = window.location.pathname.startsWith('/watch') || window.location.pathname.startsWith('/shorts');
         const videos = document.querySelectorAll('video');
         const adShowing = !!document.querySelector('.ad-showing');
 
         // Layout Sync
         if (isWatch) {
-            shield.style.top = '0'; 
-            shield.style.height = '100vh';
+            shield.style.top = '0'; shield.style.height = '100vh';
             if (adShowing && videos[0]?.duration > 0) {
                 sessionStorage.setItem('yt-ad-reload-active', 'true');
                 window.location.replace(window.location.href);
             }
         } else {
-            shield.style.top = 'auto'; 
-            shield.style.bottom = '0'; 
-            shield.style.height = '100px';
+            shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
         }
 
         // UNMUTE ENFORCER
@@ -117,8 +100,10 @@
                 if (v.src && v.readyState >= 1) {
                     v.muted = false;
                     v.volume = 1.0;
-                    activeSrc = v.src;
-                    if (!v.muted) success = true;
+                    if (!v.muted) {
+                        success = true;
+                        activeSrc = v.src;
+                    }
                 }
             });
 
@@ -143,9 +128,11 @@
         // Shield Appearance Condition
         let needsShield = false;
         videos.forEach(v => {
-            if (v.muted && v.src !== activeSrc && !adShowing) needsShield = true;
-            if (v.src !== activeSrc && activeSrc !== "") {
-                activeSrc = ""; userWantsUnmute = false;
+            if (v.muted && v.src && !adShowing) {
+                if (v.src !== activeSrc) needsShield = true;
+            }
+            if (v.src !== activeSrc && activeSrc !== "" && !v.muted) {
+                activeSrc = v.src;
             }
         });
 
@@ -156,7 +143,6 @@
             shield.style.display = 'none';
         }
 
-        // Standard Cleanup
         if (!adShowing && sessionStorage.getItem('yt-ad-reload-active') === 'true') {
             sessionStorage.removeItem('yt-ad-reload-active');
             const saver = document.getElementById('yt-hard-blocker');
