@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name YouTube Mobile URL Shield AB+
 // @namespace http://tampermonkey.com/
-// @version 3.2
-// @description Persistent Unmute + Stutter Fix
+// @version 3.5
+// @description Optimized Data Blockade + /watch Pause Fix
 // @author ancandi
 // @run-at document-start
 // @match https://*.youtube.com/*
@@ -12,15 +12,12 @@
 (function() {
     'use strict';
 
-    // --- 1. THE REDIRECT ENGINE ---
-    const checkHistoryHole = () => {
-        if (sessionStorage.getItem('yt-ad-reload-active') === 'true' && window.location.pathname.startsWith('/watch')) {
-            window.location.replace(window.location.href);
-        }
-    };
-    checkHistoryHole();
+    // 1. REDIRECT ENGINE
+    if (sessionStorage.getItem('yt-ad-reload-active') === 'true' && window.location.pathname.startsWith('/watch')) {
+        window.location.replace(window.location.href);
+    }
 
-    // --- 2. MAX DATA LOCKDOWN ---
+    // 2. SCORCHED EARTH DATA BLOCKADE
     const injectStyles = () => {
         if (document.getElementById('yt-hard-blocker')) return;
         const style = document.createElement('style');
@@ -41,125 +38,106 @@
 
     if (sessionStorage.getItem('yt-ad-reload-active') === 'true') {
         injectStyles();
-        const observer = new MutationObserver(() => {
-            document.querySelectorAll('img, image').forEach(img => img.remove());
-        });
-        observer.observe(document.documentElement, { childList: true, subtree: true });
+        new MutationObserver(() => {
+            document.querySelectorAll('img, image').forEach(i => i.remove());
+        }).observe(document.documentElement, { childList: true, subtree: true });
     }
 
-    // --- 3. THE REINFORCED SHIELD ---
+    // 3. THE SHIELD
     const shield = document.createElement('div');
-    shield.id = 'reloader-unmute-shield';
-    
     Object.assign(shield.style, {
-        position: 'fixed', left: '0', width: '100vw', backgroundColor: 'transparent', 
-        zIndex: '2147483647', display: 'none', cursor: 'pointer',
-        touchAction: 'none', pointerEvents: 'auto'
+        position: 'fixed', left: '0', width: '100vw', zIndex: '2147483647', 
+        display: 'none', cursor: 'pointer', touchAction: 'none'
     });
 
-    const visualBar = document.createElement('div');
-    Object.assign(visualBar.style, {
-        position: 'absolute', bottom: '0', left: '0', width: '100%', height: '100px',
-        backgroundColor: '#ffffff', color: '#000000', display: 'flex',
+    const bar = document.createElement('div');
+    Object.assign(bar.style, {
+        position: 'absolute', bottom: '0', width: '100%', height: '100px',
+        backgroundColor: '#fff', color: '#000', display: 'flex',
         alignItems: 'center', justifyContent: 'center', fontSize: '18px',
-        fontWeight: 'bold', fontFamily: 'sans-serif', boxShadow: '0 -10px 20px rgba(0,0,0,0.3)',
-        pointerEvents: 'none'
+        fontWeight: 'bold', fontFamily: 'sans-serif', boxShadow: '0 -10px 20px rgba(0,0,0,0.3)'
     });
-    visualBar.innerText = 'TAP TO UNMUTE';
-    shield.appendChild(visualBar);
+    bar.innerText = 'TAP TO UNMUTE';
+    shield.appendChild(bar);
 
-    let currentVideoTarget = null;
+    let activeSrc = "";
 
-    const handleInteraction = (e) => {
-        if (e) {
-            e.preventDefault();
+    const unmute = (e) => {
+        if (e) { 
+            e.preventDefault(); 
             e.stopPropagation();
-        }
-
-        const video = document.querySelector('video');
-        if (video) {
-            video.muted = false;
-            video.volume = 1.0;
-            // Capture the current video to prevent shield from reappearing for this specific one
-            currentVideoTarget = video.src; 
-            video.play().catch(() => { 
-                // Fallback for aggressive mobile browsers
-                video.muted = false;
-                video.play();
-            });
+            e.stopImmediatePropagation(); 
         }
         
+        const v = document.querySelector('video');
+        if (v) {
+            activeSrc = v.src;
+            v.muted = false;
+            v.volume = 1.0;
+            
+            // Optimization: Double-tap play to override YT's pause-on-click logic
+            const playVideo = () => {
+                v.play().catch(() => {
+                    v.muted = false;
+                    v.play();
+                });
+            };
+            
+            playVideo();
+            // Micro-delay to catch YT's accidental pause toggle
+            setTimeout(playVideo, 50); 
+        }
         shield.style.display = 'none';
         return false;
     };
 
-    ['touchstart', 'click'].forEach(evt => {
-        shield.addEventListener(evt, handleInteraction, { capture: true, passive: false });
-    });
+    // Capture at the highest level to prevent bubbling to YT Player
+    shield.addEventListener('touchstart', unmute, { capture: true, passive: false });
+    shield.addEventListener('click', unmute, { capture: true });
 
-    // --- 4. MONETIZATION-KILL ---
-    let reloadTriggered = false;
-    const strictMonKill = () => {
-        if (!window.location.pathname.startsWith('/watch') || reloadTriggered) return;
+    // 4. MONETIZATION KILL
+    let trig = false;
+    const monKill = () => {
+        if (!window.location.pathname.startsWith('/watch') || trig) return;
         const ad = document.querySelector('.ad-showing, .ad-interrupting');
-        const video = document.querySelector('video');
-
-        if (ad && video) {
-            video.muted = true;
-            video.pause(); 
-            if (!isNaN(video.duration) && video.duration > 0 && video.readyState >= 1) {
-                reloadTriggered = true;
-                sessionStorage.setItem('yt-ad-reload-active', 'true');
-                history.replaceState(null, "", window.location.href);
-                window.location.replace(window.location.href); 
-            }
+        const v = document.querySelector('video');
+        if (ad && v && !isNaN(v.duration) && v.duration > 0) {
+            trig = true;
+            sessionStorage.setItem('yt-ad-reload-active', 'true');
+            window.location.replace(window.location.href);
         }
     };
 
-    // --- 5. MAINTENANCE LOOP ---
+    // 5. MAINTENANCE (5ms Polling)
     setInterval(() => {
-        const isWatch = window.location.pathname.startsWith('/watch');
-        const video = document.querySelector('video');
+        const watch = window.location.pathname.startsWith('/watch');
+        const v = document.querySelector('video');
 
-        // Layout Logic: Keep /watch full screen, everything else bottom-bar
-        if (isWatch) {
-            shield.style.top = '0'; 
-            shield.style.height = '100vh';
-            strictMonKill();
+        if (watch) {
+            shield.style.top = '0'; shield.style.height = '100vh';
+            monKill();
         } else {
-            shield.style.top = 'auto'; 
-            shield.style.bottom = '0'; 
-            shield.style.height = '100px'; 
+            shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
             sessionStorage.removeItem('yt-ad-reload-active');
         }
 
-        // Reset the tracker if the video source changes (scrolling to new Short/Video)
-        if (video && currentVideoTarget !== video.src) {
-            currentVideoTarget = null;
+        if (!v || trig) { shield.style.display = 'none'; return; }
+        if (v.src !== activeSrc) activeSrc = "";
+
+        if (!document.querySelector('.ad-showing') && sessionStorage.getItem('yt-ad-reload-active') === 'true') {
+            sessionStorage.removeItem('yt-ad-reload-active');
+            const s = document.getElementById('yt-hard-blocker');
+            if (s) s.remove();
         }
 
-        // Persistence Logic
-        if (video && video.muted && !document.querySelector('.ad-showing') && !currentVideoTarget) {
-            if (!document.getElementById('reloader-unmute-shield')) {
-                document.body.appendChild(shield);
-            }
+        // Logical Check: Only show if muted and we haven't unmuted THIS specific src yet
+        if (v.muted && !document.querySelector('.ad-showing') && !activeSrc) {
+            if (!shield.parentElement) document.body.appendChild(shield);
             shield.style.display = 'flex';
         } else {
             shield.style.display = 'none';
         }
+    }, 5);
 
-        // UI Cleanup
-        if (!document.querySelector('.ad-showing') && sessionStorage.getItem('yt-ad-reload-active') === 'true') {
-            sessionStorage.removeItem('yt-ad-reload-active');
-            const saver = document.getElementById('yt-hard-blocker');
-            if (saver) saver.remove();
-        }
-
-    }, 150); // Slightly slower polling to prevent browser event-loop stutter
-
-    window.addEventListener('popstate', () => {
-        reloadTriggered = false;
-        currentVideoTarget = null; // Clear on navigation
-    });
-
+    window.addEventListener('popstate', () => { trig = false; activeSrc = ""; });
 })();
