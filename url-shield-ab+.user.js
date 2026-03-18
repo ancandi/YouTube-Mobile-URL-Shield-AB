@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name YouTube Mobile URL Shield AB+
 // @namespace http://tampermonkey.com/
-// @version 4.8.2
+// @version 3.0.1
 // @description UI Recovery + Independent Unmute Enforcer
 // @author ancandi
 // @run-at document-start
