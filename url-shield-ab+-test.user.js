@@ -13,7 +13,7 @@
     s.textContent = `
         :root { --b: rgba(255,255,255,0.9); --t: #0f0f0f; --g: rgba(0,0,0,0.1); }
         @media (prefers-color-scheme: dark) { :root { --b: rgba(15,15,15,0.9); --t: #fff; --g: rgba(255,255,255,0.1); } }
-        .shd-bar, .shd-tab { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .shd-bar, .shd-tab { backdrop-filter: blur(8px)!important; -webkit-backdrop-filter: blur(8px)!important; }
         .shd-bar { background: var(--b)!important; color: var(--t)!important; border-top: 1px solid var(--g)!important; }
         .shd-btn { background: var(--t)!important; color: var(--b)!important; }
         .shd-tab { background: var(--b)!important; border: 1px solid var(--g)!important; opacity: 0.8; }
@@ -33,7 +33,7 @@
     Object.assign(sh.style, { position: 'fixed', inset: '0', zIndex: '2147483647', display: 'none', pointerEvents: 'none' });
     Object.assign(br.style, { position: 'absolute', bottom: '0', width: '100%', height: '100px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', pointerEvents: 'auto' });
     Object.assign(hi.style, { position: 'fixed', bottom: '100px', left: '15px', width: '60px', height: '40px', textAlign: 'center', lineHeight: '40px', fontSize: '14px', borderRadius: '10px 10px 0 0', zIndex: '2147483647', display: 'none', pointerEvents: 'auto' });
-    Object.assign(tb.style, { position: 'fixed', bottom: '40px', right: '20px', width: '70px', height: '45px', borderRadius: '12px', display: 'none', pointerEvents: 'auto' });
+    Object.assign(tb.style, { position: 'fixed', bottom: '40px', right: '20px', width: '70px', height: '45px', borderRadius: '12px', zIndex: '0', display: 'none', pointerEvents: 'auto' });
 
     sh.appendChild(br);
     hi.ontouchstart = e => { e.preventDefault(); lock = true; };
