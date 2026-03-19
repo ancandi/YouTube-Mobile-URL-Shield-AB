@@ -39,13 +39,7 @@ URL Shield offers a different path to achieving uninteruppted mobile youtube bro
 
 <br>
 
-> **⚠️ One known issue:** Navigating to the **`previous page`** after a reload may display a **`duplicate version`** of the **`current YouTube video.`** Previous YouTube homepages where the **`current video`** playing was routed, are **`pushed 1 page back`** from navigation. 
- 
-> Expected: Navigation Back $\rightarrow$ Previous Page (e.g., YouTube Homepage).
-
-> Actual: Navigation Back $\rightarrow$ **`Duplicate, Broken/Frozen`** Version Of **`THE CURRENT`** Video $\rightarrow$ (Back Click) $\rightarrow$ Previous Page.
-
->Reloading a video page duplicates the history entry, breaking "Back" navigation and requiring a double-tap to return to the homepage.
+> **⚠️ Known Issue(s): **`Zero.`**
 
 <br>
 
@@ -70,7 +64,7 @@ To make this seamless, we provided a "Tap to Unmute" zone at the bottom of the s
 ## This project is a work in progress. 
 If you have ideas for better data blockade, or want UI improvements like customizing and bringing the tap to unmute to any playing video, I’d love for you to contribute in any way. Please reach out by opening a new issue!
 
->**`Experimental`** (taking into consideration the suggestions): [v4.8.5](https://github.com/ancandi/YouTube-Mobile-URL-Shield-AB/raw/refs/heads/main/url-shield-ab+-test.user.js)
+>**`Experimental`** (taking into consideration the suggestions): [v6.4.0](https://github.com/ancandi/YouTube-Mobile-URL-Shield-AB/raw/refs/heads/main/url-shield-ab+-test.user.js)
 
 <br>
 
