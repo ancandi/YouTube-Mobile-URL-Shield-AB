@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name YouTube Mobile URL Shield AB+
-// @version 3.0.4.2
+// @version 3.0.4
 // @match https://*.youtube.com/*
 // @run-at document-start
 // ==/UserScript==
