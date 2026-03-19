@@ -42,7 +42,7 @@ URL Shield offers a different path to achieving uninteruppted mobile youtube bro
 
 <br>
 
-> **⚠️ Known Issue(s):** **`Zero. (Please let me know via an issue request if you experience UI issues.)`**
+> **⚠️ Known Issue(s):** **`Some videos do not allow unmute, and if these videos prompts the GUI script to show, you may hear a short burst of audio on each tap to unmute. Aside from that, there are none. (Please let me know via an issue request if you experience UI issues.)`**
 
 <br>
 
