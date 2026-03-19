@@ -42,7 +42,7 @@ URL Shield offers a different path to achieving uninteruppted mobile youtube bro
 
 <br>
 
-> **⚠️ Known Issue(s):** **`Zero.`**
+> **⚠️ Known Issue(s):** **`Zero. (Please let me know via an issue request if you experience UI issues.)`**
 
 <br>
 
