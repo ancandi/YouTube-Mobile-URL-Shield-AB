@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name YouTube Mobile URL Shield AB+
+// @name YouTube Mobile URL Shield AB+ Theme-Locked
 // @namespace http://tampermonkey.com/
 // @version 3.0.2
 // @description UI Recovery + Independent Unmute Enforcer
@@ -12,153 +12,133 @@
 (function() {
     'use strict';
 
-    let userWantsUnmute = false; 
-    let activeSrc = ""; 
-    let forceResumeTimer = null;
-    let playStartTime = 0;
-    let isNavigating = false;
-    let amnestyGranted = false; 
+    let userWantsUnmute = false, activeSrc = "", sessionLocked = false;
 
-    window.addEventListener('popstate', () => {
-        isNavigating = true;
-        setTimeout(() => { isNavigating = false; }, 1200);
-    });
-
-    const nuclearReload = () => {
-        if (isNavigating) return;
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('reload_ts', Date.now());
-        try { sessionStorage.setItem('yt-ad-reload-active', 'true'); } catch(e) {}
-        window.location.replace(currentUrl.toString());
-    };
-
-    // --- 1. DATA PREDATOR (Refined for Search) ---
+    // --- 1. CORE ENGINE (v4.8.9) ---
     const predator = new MutationObserver((mutations) => {
         for (let i = 0; i < mutations.length; i++) {
             const nodes = mutations[i].addedNodes;
             for (let j = 0; j < nodes.length; j++) {
                 const node = nodes[j];
-                if (node.nodeType !== 1) continue;
-
-                const isExplicitAd = node.classList?.contains('ad-showing') || 
-                                     node.closest?.('.ad-showing') || 
-                                     node.querySelector?.('.ytd-ad-slot-renderer') ||
-                                     node.closest?.('ytm-promoted-video-renderer');
-
-                if (isExplicitAd && !isNavigating) { nuclearReload(); return; }
-
-                // LOGIC: Handle Reload Recovery
-                if (sessionStorage.getItem('yt-ad-reload-active') === 'true') {
-                    const isSearchResult = window.location.pathname.startsWith('/results');
-                    
-                    // If we are on search, let thumbnails live; if on watch, only let the main video live
-                    if (node.tagName === 'VIDEO' && !isExplicitAd && !amnestyGranted) {
-                        amnestyGranted = true; 
-                        continue; 
-                    }
-                    
-                    // Allow images ONLY if we are on the search page and they aren't ads
-                    if (isSearchResult && ['IMG', 'IMAGE'].includes(node.tagName) && !isExplicitAd) {
-                        continue; 
-                    }
-
-                    // Kill everything else (Ads, tracking pixels, watch-page clutter)
-                    if (['IMG', 'IMAGE'].includes(node.tagName) || (node.tagName === 'VIDEO' && isExplicitAd)) {
-                        node.src = ''; node.remove(); 
-                    }
+                if (node.nodeType === 1 && (node.classList?.contains('ad-showing') || node.closest?.('.ad-showing'))) {
+                    window.location.replace(window.location.href + (window.location.href.includes('?') ? '&' : '?') + 'reload_ts=' + Date.now());
+                    return;
                 }
             }
         }
     });
     predator.observe(document.documentElement, { childList: true, subtree: true });
 
-    // --- 2. UI STACK (Shield & Visual Bar) ---
-    const shield = document.createElement('div');
-    shield.id = 'reloader-unmute-shield';
-    Object.assign(shield.style, {
-        position: 'fixed', left: '0', width: '100vw', zIndex: '2147483647', 
-        display: 'none', cursor: 'pointer', touchAction: 'manipulation', backgroundColor: 'transparent',
-        pointerEvents: 'auto'
-    });
+    // --- 2. UI STACK ---
+    const shield = document.createElement('div'),
+          visualBar = document.createElement('div'),
+          dismissBtn = document.createElement('div'),
+          resurrectTab = document.createElement('div');
 
-    const visualBar = document.createElement('div');
+    visualBar.innerText = 'TAP TO UNMUTE';
+    dismissBtn.innerText = 'HIDE';
+
+    Object.assign(shield.style, { position: 'fixed', left: '0', width: '100vw', zIndex: '2147483647', display: 'none', cursor: 'pointer' });
+
     Object.assign(visualBar.style, {
         position: 'absolute', bottom: '0', left: '0', width: '100%', height: '100px',
-        backgroundColor: '#0f0f0f', color: '#ffffff', textAlign: 'center',
-        lineHeight: '100px', fontSize: '18px', fontWeight: 'bold', fontFamily: 'sans-serif', 
-        borderTop: '1px solid #333', zIndex: '2001', pointerEvents: 'none'
+        backdropFilter: 'blur(4px)', webkitBackdropFilter: 'blur(4px)',
+        fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+        fontSize: '20px', zIndex: '2147483647'
     });
-    visualBar.innerText = 'TAP TO UNMUTE';
+
+    Object.assign(dismissBtn.style, {
+        position: 'fixed', bottom: '100px', left: '15px', width: '60px', height: '40px',
+        textAlign: 'center', lineHeight: '40px', fontSize: '14px', fontWeight: 'bold', 
+        borderRadius: '10px 10px 0 0', zIndex: '2147483647', display: 'none'
+    });
+
+    Object.assign(resurrectTab.style, {
+        position: 'fixed', bottom: '40px', right: '20px', width: '70px', height: '45px',
+        backdropFilter: 'blur(4px)', webkitBackdropFilter: 'blur(4px)',
+        borderRadius: '12px', zIndex: '2147483640', display: 'none'
+    });
+
     shield.appendChild(visualBar);
 
-    // --- 3. THE RESUME HAMMER ---
-    const startForceResume = (videos) => {
-        if (forceResumeTimer) clearInterval(forceResumeTimer);
-        let attempts = 0;
-        forceResumeTimer = setInterval(() => {
-            videos.forEach(v => {
-                if (v.paused && v.readyState >= 1) v.play().catch(() => {});
-            });
-            if (++attempts > 50) clearInterval(forceResumeTimer);
-        }, 10); 
+    // --- 3. ROBUST THEME DETECTION ---
+    const updateTheme = () => {
+        // Check HTML attribute, Body class, or System Pref
+        const isDark = document.documentElement.hasAttribute('dark') || 
+                       document.body.classList.contains('dark-mode') || 
+                       document.body.classList.contains('ytm-dark-mode') ||
+                       window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (isDark) {
+            // Dark Mode (v6.1.5 Specs)
+            visualBar.style.backgroundColor = 'rgba(15, 15, 15, 0.98)';
+            visualBar.style.color = '#ffffff';
+            visualBar.style.borderTop = '1px solid #333';
+            dismissBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.98)';
+            dismissBtn.style.color = '#000000';
+            resurrectTab.style.backgroundColor = 'rgba(28, 28, 28, 0.75)';
+            resurrectTab.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        } else {
+            // Light Mode
+            visualBar.style.backgroundColor = 'rgba(255, 255, 255, 0.98)';
+            visualBar.style.color = '#0f0f0f';
+            visualBar.style.borderTop = '1px solid #e5e5e5';
+            dismissBtn.style.backgroundColor = 'rgba(15, 15, 15, 0.98)';
+            dismissBtn.style.color = '#ffffff';
+            resurrectTab.style.backgroundColor = 'rgba(240, 240, 240, 0.75)';
+            resurrectTab.style.border = '1px solid rgba(0, 0, 0, 0.1)';
+        }
     };
 
-    const handleInteraction = (e) => {
-        if (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
-        userWantsUnmute = true; 
-        return false;
-    };
-    ['touchstart', 'click'].forEach(evt => shield.addEventListener(evt, handleInteraction, { capture: true, passive: false }));
+    // --- 4. MAINTENANCE ---
+    const handleTouch = (e, lock) => { e.preventDefault(); e.stopPropagation(); sessionLocked = lock; };
+    dismissBtn.addEventListener('touchstart', (e) => handleTouch(e, true));
+    resurrectTab.addEventListener('touchstart', (e) => handleTouch(e, false));
+    shield.addEventListener('touchstart', () => { if(!sessionLocked) userWantsUnmute = true; });
 
-    // --- 4. MAINTENANCE LOOP ---
     setInterval(() => {
+        updateTheme(); 
         const path = window.location.pathname;
         const isSearch = path.startsWith('/results');
-        const isInteractive = path.startsWith('/watch') || path.startsWith('/shorts') || isSearch;
-        const videos = document.querySelectorAll('video');
-        const adShowing = !!document.querySelector('.ad-showing') || !!document.querySelector('ytm-promoted-video-renderer');
+        const isWatch = path.startsWith('/watch');
 
-        if (adShowing && !isNavigating) { nuclearReload(); return; }
-
-        // Layout: Search page keeps the bar at the bottom to avoid blocking results
-        if (isInteractive && !isSearch) {
-            shield.style.top = '0'; shield.style.height = '100vh';
-        } else {
-            shield.style.top = 'auto'; shield.style.bottom = '0'; shield.style.height = '100px';
+        // Isolation Check
+        const active = document.activeElement;
+        const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+        const sidebarOpen = !!document.querySelector('ytm-browse-sidebar-renderer[opened], .ytm-sidebar-open');
+        
+        if (isSearch || isTyping || sidebarOpen) {
+            shield.style.display = dismissBtn.style.display = resurrectTab.style.display = 'none';
+            return; 
         }
 
-        if (userWantsUnmute) {
-            let success = false;
-            videos.forEach(v => {
-                if (v.src && v.readyState >= 1) {
-                    v.muted = false; v.volume = 1.0;
-                    if (!v.muted) { success = true; activeSrc = v.src; }
-                }
-            });
-            if (success) {
-                userWantsUnmute = false; shield.style.display = 'none';
-                startForceResume(videos);
-                playStartTime = Date.now();
-            }
-        }
+        const vids = document.querySelectorAll('video');
+        let anyUnmuted = false;
+        vids.forEach(v => { if (v.src && !v.muted) anyUnmuted = true; });
 
-        // Cleanup: Reset "Active Reload" state once we are stable
-        if ( (videos[0] && !videos[0].paused && !videos[0].muted && !adShowing && playStartTime > 0) || (isSearch && Date.now() - playStartTime > 3000) ) {
-            if (Date.now() - playStartTime > 2000) {
-                sessionStorage.removeItem('yt-ad-reload-active');
-                amnestyGranted = false; 
-                playStartTime = 0;
-            }
+        let needsShield = isWatch ? !anyUnmuted : false;
+        if (!isWatch) {
+            vids.forEach(v => { if (v.muted && v.src && v.src !== activeSrc) needsShield = true; });
         }
-
-        let needsShield = false;
-        videos.forEach(v => { if (v.muted && v.src && !adShowing && v.src !== activeSrc) needsShield = true; });
 
         if (needsShield || userWantsUnmute) {
             if (!shield.parentElement) document.body.appendChild(shield);
             shield.style.display = 'block';
+            shield.style.bottom = '0';
+            shield.style.top = 'auto';
+            shield.style.height = '100px';
         } else {
             shield.style.display = 'none';
         }
-    }, 10);
+
+        if (userWantsUnmute) {
+            document.querySelectorAll('video').forEach(v => {
+                if (v.src && v.readyState >= 1) {
+                    v.muted = false; v.volume = 1.0;
+                    if (v.paused) v.play();
+                    if (!v.muted) { activeSrc = v.src; userWantsUnmute = false; }
+                }
+            });
+        }
+    }, 40);
 })();
