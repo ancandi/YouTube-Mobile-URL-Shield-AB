@@ -36,6 +36,9 @@ URL Shield offers a different path to achieving uninteruppted mobile youtube bro
 
 ## ⚙️ Other Utility Extensions/Issues
 - You might want to try out other userscript utilities available on both Mobile/Desktop such as: [Evade - Link Bypasser](https://skipped.lol/)
+`Here is a picture of my personally added and customized userscripts.`
+<img width="704" height="1523" alt="image" src="https://github.com/user-attachments/assets/ea1f8205-4a4a-49f3-9eae-7b6e3d35873f" />
+
 
 <br>
 
