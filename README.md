@@ -19,7 +19,8 @@ URL Shield offers a different path to achieving uninteruppted mobile YouTube bro
 
 **`Browse:`** Open any YouTube video; the script silently monitors the player.
 
-**`Restore:`** When the "Tap to Unmute" bar appears, touch the zone to re-engage high-fidelity audio. ###### Note: Zone is increased to fullscreen in some pages for accessibility.
+**`Restore:`** When the "Tap to Unmute" bar appears, touch the zone to re-engage high-fidelity audio. 
+###### Note: Zone is increased to fullscreen in some pages for accessibility.
 
 ## 📝 Beta Notes
 - **`Data-Lite:`** This version is optimized to have minimal JavaScript footprint, ensuring fast execution on older mobile devices.
