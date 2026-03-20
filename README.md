@@ -22,9 +22,9 @@ URL Shield offers a different path to achieving uninteruppted mobile YouTube bro
 **`Restore:`** When the "Tap to Unmute" bar appears, touch the zone to re-engage high-fidelity audio.
 
 ## 📝 Beta Notes
-- Data-Lite: This version is optimized to have minimal JavaScript footprint, ensuring fast execution on older mobile devices.
-- Privacy First: URL Shield AB+ does not require any special permissions and does not track your browsing habits.
-- Future Updates: We are currently working on integrating "Shorts" removal, a "Black Background" player mode, and prioritizing data usage features for mobile phones for the next major release.
+- **`Data-Lite:`** This version is optimized to have minimal JavaScript footprint, ensuring fast execution on older mobile devices.
+- **`Privacy First:`** URL Shield AB+ does not require any special permissions and does not track your browsing habits.
+- **`Future Updates:`** We are currently working on integrating "Shorts" removal, a "Black Background" player mode, and prioritizing data usage features for mobile phones for the next major release.
 
 <br>
 
