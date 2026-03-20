@@ -50,8 +50,10 @@ URL Shield offers a different path to achieving uninteruppted mobile YouTube bro
 
 ## ⚡️ How is this shield protection script different?
 
-- Traditional blockers rely on **`brittle Filter Lists`** or **`video player black-outs`** that require constant updates, not very functional and are easily detected. URL Shield AB+ utilizes **`Behavioral Monitoring`**. By tracking the video player’s state in real-time, it executes a granular **`page-state`** reset that bypasses interruptions at the source. This method is structurally undetectable and independent of YouTube’s shifting code. 
+- Traditional blockers rely on **`brittle Filter Lists`** or **`video player black-outs`** that require constant updates, not very functional and are easily detected. URL Shield AB+ utilizes **`Behavioral Monitoring`**. By tracking the video player’s state in real-time, it executes a granular **`page-state`** reset that bypasses interruptions at the source. This method is structurally undetectable and independent of YouTube’s shifting code.
+- 
 - An **`"Unmute" zone`** is also added after reloads to make YouTube browsing accessibility-friendly. Additionally, it prevents data consumption by not allowing normally downloaded elements, making this data-seamless.
+  
 Current Features `[v3.0.6]`:
 - Neutralizes monetization-slot renderers and media streams before they can consume mobile data.
 - rAF Sync Engine: Leverages requestAnimationFrame for stutter-free UI and zero CPU overhead when possible.
