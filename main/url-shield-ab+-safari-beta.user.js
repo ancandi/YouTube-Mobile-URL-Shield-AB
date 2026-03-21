@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name YouTube Mobile URL Shield AB+ [Safari Elite]
+// @name YouTube Mobile URL Shield AB+ [Safari]
 // @version 3.0.7-S
 // @match https://*.youtube.com/*
 // @run-at document-start
@@ -61,7 +61,6 @@
                 if (n) {
                     !sh.parentNode && d.body.append(sh, hi);
                     sh.style.display = 'block';
-                    // SAFARI FIX: Use opacity + pointer-events for the bar to avoid compositor flickering
                     br.style.opacity = hideVisuals ? '0' : '1';
                     br.style.pointerEvents = hideVisuals ? 'none' : 'auto';
                     hi.style.display = (isS && !l && !hideVisuals) ? 'block' : 'none';
