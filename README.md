@@ -112,7 +112,7 @@ Forces high-fidelity VP9/AV1 streams and bypasses mobile data throttling by hija
 
 ---
 
-##### 🛡️ YouTube Mobile URL Shield AB+
+#### 🛡️ YouTube Mobile URL Shield AB+
 **Version 3.0.8** | *UI-Driven Interaction Off*
 Automates the "Tap to Unmute" process on mobile, nukes monetization-slots, and prevents player stalls with a custom frosted-glass UI.
 
