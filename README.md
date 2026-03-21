@@ -74,10 +74,27 @@ If you have ideas for better data blockade, or want UI improvements like customi
 <br>
 
 ## 🔍 Looking for more?
+### 🛠️ The Userscript Directory
+> **Optimization Level:** Featherweight | **Last Updated:** 2026
 
-<img width="200" height="500" alt="image" src="https://github.com/user-attachments/assets/ea1f8205-4a4a-49f3-9eae-7b6e3d35873f" />
+#### 🚀 Primary Utilities (ancandi)
+* **YouTube Mobile URL Shield AB+** — UI-driven unmute & ad-nuke (v3.0.7).
+* **Video Bitrate O/BA** — Adaptive codec & bitrate overdrive (v1.2.7).
+* **Night Mode Disabler (Whitelist)** — Contrast control for mobile UI.
+* **YouTube Shield (Zero UI)** — Invisible automation engine (v4.1.0).
 
-- Major Public Userscripts Listed above. Try out other public userscript utilities: **[Evade - Link Bypasser](https://skipped.lol/)**
+#### 🔗 External Resources
+* **Evade** — via `skipped.lol`
+* **AdGuard Extra** — Advanced anti-adblock bypass.
+* **AdsBypasser** — Countdown and redirect skip logic.
+* **FMHY Base64 Auto Decoder** — Automatic string decoding for piracy/sharing.
+* **Bypass All Shortlinks** — Universal link-shortener skip.
+* **I don't care about cookies** — Automated cookie consent handling.
+
+#### ⚠️ Maintenance & Status
+* **Login reminder popup remover** — `[DEVELOPMENT CEASED]`
+
+- Try this public userscript utility: **[Evade - Link Bypasser](https://skipped.lol/)**
 
 ## AND1 UserScripts — This is the complete collection of high-performance, streamlined userscripts designed to reclaim control over mobile web experiences. ⬇
 > Otherwise, check out the full source code and technical documentation at **[github.com/ancandi](https://github.com/ancandi)**.
