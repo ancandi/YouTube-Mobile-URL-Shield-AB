@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name YouTube Mobile URL Shield AB+
+// @name YouTube Mobile URL Shield AB+ [Safari Elite]
 // @version 3.0.7
 // @match https://*.youtube.com/*
 // @run-at document-start
@@ -9,10 +9,10 @@
     'use strict';
     let l = 0, g = 0, u = 0, cur = location.pathname;
     const el = (t, s) => Object.assign(d.createElement(t), { style: s }),
-          sh = el('div', 'position:fixed;inset:0;z-index:2147483647;display:none'),
-          br = el('div', 'position:absolute;bottom:0;width:100%;height:120px;font:900 20px arial;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:auto'),
-          hi = el('div', 'position:fixed;bottom:120px;left:15px;width:90px;height:45px;text-align:center;line-height:45px;border-radius:12px 12px 0 0;z-index:2147483647;display:none;font:900 14px arial;pointer-events:auto'),
-          tb = el('div', 'position:fixed;bottom:40px;right:20px;width:70px;height:45px;border-radius:12px;display:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none'),
+          sh = el('div', 'position:fixed;inset:0;z-index:2147483647;display:none;-webkit-tap-highlight-color:transparent'),
+          br = el('div', 'position:absolute;bottom:0;width:100%;height:120px;font:900 20px arial;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);pointer-events:auto'),
+          hi = el('div', 'position:fixed;bottom:120px;left:15px;width:90px;height:45px;text-align:center;line-height:45px;border-radius:12px 12px 0 0;z-index:2147483647;display:none;font:900 14px arial;pointer-events:auto;letter-spacing:1px'),
+          tb = el('div', 'position:fixed;bottom:40px;right:20px;width:70px;height:45px;border-radius:12px;display:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);pointer-events:none'),
           th = el('div', 'position:fixed;bottom:40px;right:20px;width:70px;height:45px;z-index:2147483647;display:none;pointer-events:auto');
 
     br.innerText = 'TAP TO UNMUTE'; hi.innerText = 'HIDE'; sh.append(br);
@@ -31,9 +31,9 @@
 
     (function loop() {
         const p = location.pathname, isW = p.startsWith('/watch'), isS = p.startsWith('/results'), 
-              isFS = d.fullscreenElement || d.webkitIsFullScreen, act = d.activeElement;
+              isFS = d.webkitIsFullScreen || d.fullscreenElement, act = d.activeElement;
         
-        (p != cur) && (!isS && (l = 0), cur = p); // Nav Reset Logic
+        (p != cur) && (!isS && (l = 0), cur = p);
         d.querySelectorAll('ytd-ad-slot-renderer, ytm-ad-slot-renderer, .ad-showing, .ad-interrupting').forEach(t => t.remove());
 
         if (isW && d.querySelector('.ad-showing')) return location.replace(location.href.split('&ts=')[0] + (location.href.includes('?') ? '&' : '?') + 'ts=' + Date.now());
@@ -61,7 +61,8 @@
                 if (n) {
                     !sh.parentNode && d.body.append(sh, hi);
                     sh.style.display = 'block';
-                    br.style.display = hideVisuals ? 'none' : 'flex';
+                    br.style.opacity = hideVisuals ? '0' : '1';
+                    br.style.pointerEvents = hideVisuals ? 'none' : 'auto';
                     hi.style.display = (isS && !l && !hideVisuals) ? 'block' : 'none';
                 } else if (!u) sh.style.display = hi.style.display = 'none';
             }
