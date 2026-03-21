@@ -12,7 +12,7 @@
     const el = (t, s) => Object.assign(d.createElement(t), { style: s }),
           sh = el('div', 'position:fixed;inset:0;z-index:2147483647;display:none'),
           br = el('div', 'position:absolute;bottom:0;width:100%;height:120px;font:900 20px arial;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:auto'),
-          hi = el('div', 'position:fixed;bottom:120px;left:15px;width:90px;height:45px;text-align:center;line-height:45px;border-radius:12px 12px 0 0;z-index:2147483647;display:none;font:900 14px arial;pointer-events:auto;display:flex;align-items:center;justify-content:center'),
+          hi = el('div', 'position:fixed;bottom:120px;left:15px;width:90px;height:45px;text-align:center;line-height:45px;border-radius:12px 12px 0 0;z-index:2147483647;display:none;font-weight:900;font-size:14px;pointer-events:auto'),
           tb = el('div', 'position:fixed;bottom:40px;right:20px;width:70px;height:45px;border-radius:12px;display:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none'),
           th = el('div', 'position:fixed;bottom:40px;right:20px;width:70px;height:45px;z-index:2147483647;display:none;pointer-events:auto');
 
