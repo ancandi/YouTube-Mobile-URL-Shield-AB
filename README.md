@@ -86,7 +86,7 @@ Prevents aggressive "Forced Dark Mode" on mobile browsers from breaking specific
 <br>
 
 # FAQ
----
+
 ## ⚡️ How is this shield protection script different?
 
 - Traditional blockers rely on **`brittle Filter Lists`** or **`video player black-outs`** that require constant updates, not very functional and are easily detected. URL Shield AB+ utilizes **`Behavioral Monitoring`**. By tracking the video player’s state in real-time, it executes a granular **`page-state`** reset that bypasses interruptions at the source. This method is structurally undetectable and independent of YouTube’s shifting code.
