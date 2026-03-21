@@ -84,7 +84,9 @@ Prevents aggressive "Forced Dark Mode" on mobile browsers from breaking specific
 > **⚠️ Known Issue(s):** **`Note on Audio Sync: On licensed content (Vevo/Music), you may experience a momentary audio burst during UI touch processes. This is a result of the browser’s security engine synchronizing with the script’s forced-unmute command.`**
 
 <br>
+
 # FAQ
+---
 ## ⚡️ How is this shield protection script different?
 
 - Traditional blockers rely on **`brittle Filter Lists`** or **`video player black-outs`** that require constant updates, not very functional and are easily detected. URL Shield AB+ utilizes **`Behavioral Monitoring`**. By tracking the video player’s state in real-time, it executes a granular **`page-state`** reset that bypasses interruptions at the source. This method is structurally undetectable and independent of YouTube’s shifting code.
