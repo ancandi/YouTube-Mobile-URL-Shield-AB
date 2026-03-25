@@ -1,17 +1,18 @@
 // ==UserScript==
 // @name YouTube Mobile URL Shield AB+ (Safari)
 // @namespace http://tampermonkey.com/
-// @version 3.1.0-S
+// @version 3.0.9-S
 // @match https://*.youtube.com/*
 // @match https://*.youtube-nocookie.com/*
 // @match https://*.google.com/*
+// @match https://*/*
 // @run-at document-start
 // ==/UserScript==
 (function(d, w) {
     'use strict';
     let l = 0, g = 0, u = 0, st = 0, cur = location.pathname;
     const s = d.createElement('style');
-    s.textContent = 'ytd-ad-slot-renderer,ytm-ad-slot-renderer,.ad-showing,.ad-interrupting,.ytp-ad-overlay-container,ytd-rich-section-renderer:has(ytd-ad-slot-renderer),div[data-flt-ve="video_preview"] .ytp-ad-overlay-container{display:none!important}';
+    s.textContent = 'ytd-ad-slot-renderer,ytm-ad-slot-renderer,.ad-showing,.ad-interrupting,.ytp-ad-overlay-container,div[data-flt-ve="video_preview"] [class*="sponsored"],div[data-flt-ve="video_preview"] .ytp-ad-player-overlay{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}';
     (d.head || d.documentElement).appendChild(s);
     const el = (t, s) => Object.assign(d.createElement(t), { style: s }),
           sh = el('div', 'position:fixed;inset:0;z-index:2147483647;display:none;background:transparent!important'),
@@ -37,21 +38,21 @@
               isFS = d.fullscreenElement || d.webkitIsFullScreen || d.querySelector('.ytm-sidebar-open'), act = d.activeElement;
         (p != cur) && (!isS && (l = 0), cur = p, st = 0); 
         d.querySelectorAll('ytd-ad-slot-renderer, ytm-ad-slot-renderer, .ad-showing, .ad-interrupting').forEach(t => t.remove());
-        const ad = d.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay');
-        if (ad) {
-            if (isYT && isW) return location.replace(location.href.split('&ts=')[0] + (location.href.includes('?') ? '&' : '?') + 'ts=' + Date.now());
-            const gv = d.querySelector('video'); if (gv) { gv.src = gv.src; gv.load(); }
+        const v = d.querySelector('video'), gui = d.querySelector('[data-flt-ve="video_preview"]');
+        if (v && gui && (gui.innerText.includes('Sponsored') || d.querySelector('.ytp-ad-player-overlay, .ad-showing'))) {
+            v.src = v.src.split('&ts=')[0] + '&ts=' + Date.now(); v.load(); v.play().catch(()=>{});
         }
-        let v = d.querySelector('video'), dk = w.matchMedia('(prefers-color-scheme: dark)').matches || d.documentElement.hasAttribute('dark');
+        if (isYT && isW && d.querySelector('.ad-showing')) return location.replace(location.href.split('&ts=')[0] + (location.href.includes('?') ? '&' : '?') + 'ts=' + Date.now());
+        let dk = w.matchMedia('(prefers-color-scheme: dark)').matches || d.documentElement.hasAttribute('dark');
         if (v) {
             if (v.readyState == 0 || v.networkState == 3) {
-                if (++g > 75) { if (isYT) { w.dispatchEvent(new PopStateEvent('popstate')); } else { v.src = v.src; v.load(); } g = 0; }
+                if (++g > 70) { if (isYT) { w.dispatchEvent(new PopStateEvent('popstate')); } else { v.src = v.src; v.load(); } g = 0; }
             } else { g = 0; }
             (v.paused && !v.ended && v.readyState > 2 && !isFS) ? (++st > 110 && (v.play().catch(()=>{}), v.currentTime += 0.1, st = 0)) : (st = 0);
         }
         if (isFS || (act && /INPUT|TEXTAREA/.test(act.tagName))) {
             sh.style.display = hi.style.display = tb.style.display = th.style.display = 'none'; sh.style.pointerEvents = 'none';
-        } else if (isYT || d.querySelector('video')) {
+        } else if (isYT || v) {
             const c = dk ? ['#fff', '#111', '#333', 'rgba(15,15,15,0.9)'] : ['#0f0f0f', '#fff', '#e5e5e5', 'rgba(255,255,255,0.9)'];
             br.style.cssText += `background:${c[3]};color:${c[0]};border-top:1px solid ${c[2]}`;
             hi.style.cssText += `background:${c[0]};color:${c[1]};border:1px solid ${c[2]};border-bottom:none`;

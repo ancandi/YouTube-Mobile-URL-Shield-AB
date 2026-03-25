@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name YouTube Mobile URL Shield AB+
-// @namespace http://tampermonkey.com/
 // @version 3.0.9
 // @match https://*.youtube.com/*
 // @match https://*.youtube-nocookie.com/*
 // @match https://*.google.com/*
+// @match https://*/*
 // @run-at document-start
 // ==/UserScript==
 (function(d, w) {
     'use strict';
     let l = 0, g = 0, u = 0, st = 0, cur = location.pathname;
     const s = d.createElement('style');
-    s.textContent = 'ytd-ad-slot-renderer,ytm-ad-slot-renderer,.ad-showing,.ad-interrupting,.ytp-ad-overlay-container,ytd-rich-section-renderer:has(ytd-ad-slot-renderer),div[data-flt-ve="video_preview"] .ytp-ad-overlay-container{display:none!important}';
+    s.textContent = 'ytd-ad-slot-renderer,ytm-ad-slot-renderer,.ad-showing,.ad-interrupting,.ytp-ad-overlay-container,ytd-rich-section-renderer:has(ytd-ad-slot-renderer),div[data-flt-ve="video_preview"] .ytp-ad-overlay-container,[class*="sponsored"],[class*="video-ads"]{display:none!important}';
     (d.head || d.documentElement).appendChild(s);
     const el = (t, s) => Object.assign(d.createElement(t), { style: s }),
           sh = el('div', 'position:fixed;inset:0;z-index:2147483647;display:none;background:transparent!important'),
@@ -37,15 +37,15 @@
               isFS = d.fullscreenElement || d.webkitIsFullScreen || d.querySelector('.ytm-sidebar-open'), act = d.activeElement;
         (p != cur) && (!isS && (l = 0), cur = p, st = 0); 
         d.querySelectorAll('ytd-ad-slot-renderer, ytm-ad-slot-renderer, .ad-showing, .ad-interrupting').forEach(t => t.remove());
-        const ad = d.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay');
-        if (ad) {
+        const sp = d.body.innerText.includes('Sponsored') || d.querySelector('.ad-showing, .ad-interrupting, [class*="video-ads"]');
+        if (sp) {
             if (isYT && isW) return location.replace(location.href.split('&ts=')[0] + (location.href.includes('?') ? '&' : '?') + 'ts=' + Date.now());
-            const gv = d.querySelector('video'); if (gv) { gv.src = gv.src; gv.load(); }
+            const gv = d.querySelector('video'); if (gv) { gv.src = gv.src; gv.load(); gv.play().catch(()=>{}); }
         }
         let v = d.querySelector('video'), dk = w.matchMedia('(prefers-color-scheme: dark)').matches || d.documentElement.hasAttribute('dark');
         if (v) {
-            (v.readyState == 0 || v.networkState == 3) ? (++g > 75 && (isYT ? w.dispatchEvent(new PopStateEvent('popstate')) : (v.src = v.src, v.load()), g = 0)) : (g = 0);
-            (v.paused && !v.ended && v.readyState > 2 && !isFS) ? (++st > 110 && (v.play().catch(()=>{}), v.currentTime += 0.1, st = 0)) : (st = 0);
+            (v.readyState == 0 || v.networkState == 3) ? (++g > 70 && (isYT ? w.dispatchEvent(new PopStateEvent('popstate')) : (v.src = v.src, v.load()), g = 0)) : (g = 0);
+            (v.paused && !v.ended && v.readyState > 2 && !isFS) ? (++st > 100 && (v.play().catch(()=>{}), v.currentTime += 0.1, st = 0)) : (st = 0);
         }
         if (isFS || (act && /INPUT|TEXTAREA/.test(act.tagName))) {
             sh.style.display = hi.style.display = tb.style.display = th.style.display = 'none'; sh.style.pointerEvents = 'none';
