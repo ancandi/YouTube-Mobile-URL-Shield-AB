@@ -147,6 +147,15 @@ Prevents aggressive "Forced Dark Mode" on mobile browsers from breaking specific
       
 ---
 
+#### 🕶 Force Dark Mode Exceptions
+**Version 1.0** | *UI Fidelity & Chrome Desktop Flag Control*
+Neutralizes the aggressive enable-force-dark flag in Chrome for specific sites. Prevents broken UI elements and maintains original color palettes on whitelisted domains.
+
+* **>Install: Force Dark Mode Exceptions**
+    * [Standard Build](https://github.com/ancandi/Force-Dark-Mode-Exceptions/raw/refs/heads/main/force-dark-mode-exceptions.user.js)
+  
+---
+
 ## Copyright
 The source code of this repository is available for personal use only. If you would like to copy and modify it for your own personal use, you're welcome to do so without any limitations.
 
