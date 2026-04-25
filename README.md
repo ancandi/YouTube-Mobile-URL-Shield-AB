@@ -116,6 +116,7 @@ If you have ideas for better data blockade, or want UI improvements like customi
 
 #### 🚀 Video Bitrate O/BA
 **Version 1.0.1** | *Adaptive Codec & Bitrate Overdrive*
+
 Forces high-fidelity VP9/AV1 streams and bypasses mobile data throttling by hijacking the MediaSource API and mapping bitrate to real-time resolution.
 
 * **>Install: Video Bitrate O/BA**
@@ -127,6 +128,7 @@ Forces high-fidelity VP9/AV1 streams and bypasses mobile data throttling by hija
 
 #### 🛡️ YouTube Mobile URL Shield AB+
 **Version 3.0.8** | *UI-Driven Interaction Off*
+
 Automates the "Tap to Unmute" process on mobile, nukes monetization-slots, and prevents player stalls with a custom frosted-glass UI.
 
 * **>Install: YouTube Mobile URL Shield AB+**
@@ -138,6 +140,7 @@ Automates the "Tap to Unmute" process on mobile, nukes monetization-slots, and p
 
 #### 🌙 Night Mode Disabler & Whitelist (M)
 **Version 1.0.1** | *Contrast & UI Control*
+
 Prevents aggressive "Forced Dark Mode" on mobile browsers from breaking specific site UI elements. Includes whitelist settings to maintain original site aesthetics where dark mode fails.
 
 * **>Install: Night Mode Disabler**
@@ -149,6 +152,7 @@ Prevents aggressive "Forced Dark Mode" on mobile browsers from breaking specific
 
 #### 🕶 Force Dark Mode Exceptions
 **Version 1.0** | *UI Fidelity & Chrome Desktop Flag Control*
+
 Neutralizes the aggressive enable-force-dark flag in Chrome for specific sites. Prevents broken UI elements and maintains original color palettes on whitelisted domains.
 
 * **>Install: Force Dark Mode Exceptions**
